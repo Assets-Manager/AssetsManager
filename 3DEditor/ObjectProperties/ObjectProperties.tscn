@@ -1,0 +1,79 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://3DEditor/ObjectProperties/NodeProperties.tscn" type="PackedScene" id=1]
+[ext_resource path="res://3DEditor/ObjectProperties/ObjectProperties.gd" type="Script" id=2]
+[ext_resource path="res://3DEditor/ObjectProperties/Collision.gd" type="Script" id=3]
+[ext_resource path="res://addons/tooluis/Scenes/Properties/VectorProperty.tscn" type="PackedScene" id=4]
+
+[node name="ObjectProperties" type="TabContainer"]
+margin_left = 204.0
+margin_right = 404.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+tab_align = 0
+script = ExtResource( 2 )
+
+[node name="Transform" parent="." instance=ExtResource( 1 )]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+
+[node name="Collision" type="VBoxContainer" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+script = ExtResource( 3 )
+
+[node name="EnableCollision" type="CheckBox" parent="Collision"]
+margin_right = 192.0
+margin_bottom = 24.0
+text = "Enable Collision"
+
+[node name="RigidBody" type="CheckBox" parent="Collision"]
+margin_top = 28.0
+margin_right = 192.0
+margin_bottom = 52.0
+disabled = true
+text = "Rigidbody"
+
+[node name="Label" type="Label" parent="Collision"]
+margin_top = 56.0
+margin_right = 192.0
+margin_bottom = 70.0
+text = "Shape"
+
+[node name="OptionButton" type="OptionButton" parent="Collision"]
+margin_top = 74.0
+margin_right = 192.0
+margin_bottom = 94.0
+disabled = true
+text = "Cube"
+items = [ "Cube", null, false, 0, null, "Sphere", null, false, 1, null, "Cylinder", null, false, 2, null, "Slope", null, false, 3, null ]
+selected = 0
+
+[node name="Translation" parent="Collision" instance=ExtResource( 4 )]
+margin_top = 98.0
+margin_right = 192.0
+margin_bottom = 180.0
+title = "Translation"
+enabled = false
+
+[node name="Rotation" parent="Collision" instance=ExtResource( 4 )]
+margin_top = 184.0
+margin_right = 192.0
+margin_bottom = 266.0
+title = "Rotation"
+
+[connection signal="origin_changed" from="Transform" to="." method="_on_Transform_origin_changed"]
+[connection signal="transform_changed" from="Transform" to="." method="_on_Transform_transform_changed"]
+[connection signal="toggled" from="Collision/EnableCollision" to="Collision" method="_on_EnableCollision_toggled"]
+[connection signal="item_selected" from="Collision/OptionButton" to="Collision" method="_on_OptionButton_item_selected"]
+[connection signal="value_changed" from="Collision/Translation" to="Collision" method="_on_Translation_value_changed"]
+[connection signal="value_changed" from="Collision/Rotation" to="Collision" method="_on_Rotation_value_changed"]

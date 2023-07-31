@@ -1,0 +1,72 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "WindowDialog",
+"class": "CustomFileDialog",
+"language": "GDScript",
+"path": "res://addons/tooluis/Scripts/CustomFileDialog.gd"
+}, {
+"base": "Resource",
+"class": "FileDialogConfig",
+"language": "GDScript",
+"path": "res://addons/tooluis/Scripts/FileDialogConfig.gd"
+}, {
+"base": "Reference",
+"class": "GDAssimpLoader",
+"language": "NativeScript",
+"path": "res://Native/GDAssimpLoader.gdns"
+}, {
+"base": "Spatial",
+"class": "OriginView",
+"language": "GDScript",
+"path": "res://3DEditor/ObjectProperties/OriginView.gd"
+}, {
+"base": "Reference",
+"class": "SQLiteWrapper",
+"language": "GDScript",
+"path": "res://addons/godot-sqlite/godot-sqlite-wrapper.gd"
+}, {
+"base": "Object",
+"class": "SpatialUtils",
+"language": "GDScript",
+"path": "res://3DEditor/SpatialUtils.gd"
+} ]
+_global_script_class_icons={
+"CustomFileDialog": "",
+"FileDialogConfig": "",
+"GDAssimpLoader": "",
+"OriginView": "",
+"SQLiteWrapper": "",
+"SpatialUtils": ""
+}
+
+[application]
+
+config/name="AssetsBrowser"
+run/main_scene="res://3DEditor/AssetsViewer.tscn"
+config/icon="res://icon.png"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/godot-sqlite/plugin.cfg", "res://addons/tooluis/plugin.cfg" )
+
+[gui]
+
+common/drop_mouse_on_gui_input_disabled=true
+
+[physics]
+
+common/enable_pause_aware_picking=true
+
+[rendering]
+
+gles3/shaders/shader_compilation_mode=2
+environment/default_environment="res://default_env.tres"

@@ -1,0 +1,310 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://addons/tooluis/Scripts/CustomFileDialog.gd" type="Script" id=1]
+[ext_resource path="res://addons/tooluis/Assets/star.svg" type="Texture" id=2]
+[ext_resource path="res://addons/tooluis/Assets/forward_arrow.svg" type="Texture" id=3]
+[ext_resource path="res://addons/tooluis/Assets/back_arrow.svg" type="Texture" id=4]
+[ext_resource path="res://addons/tooluis/Assets/add_folder.svg" type="Texture" id=5]
+
+[sub_resource type="Theme" id=1]
+CustomFileDialog/icons/add_folder_icon = ExtResource( 5 )
+CustomFileDialog/icons/back_icon = ExtResource( 4 )
+CustomFileDialog/icons/fav_icon = ExtResource( 2 )
+CustomFileDialog/icons/forward_icon = ExtResource( 3 )
+
+[node name="CustomFileDialog" type="WindowDialog"]
+visible = true
+margin_right = -214.0
+margin_bottom = -100.0
+rect_min_size = Vector2( 810, 500 )
+theme = SubResource( 1 )
+resizable = true
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 10.0
+margin_top = 10.0
+margin_right = -10.0
+margin_bottom = -10.0
+custom_constants/separation = 10
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer"]
+margin_right = 790.0
+margin_bottom = 24.0
+
+[node name="Back" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_right = 12.0
+margin_bottom = 24.0
+
+[node name="Forward" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 16.0
+margin_right = 28.0
+margin_bottom = 24.0
+
+[node name="Up" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 32.0
+margin_right = 44.0
+margin_bottom = 24.0
+
+[node name="Path" type="LineEdit" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 48.0
+margin_right = 726.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="Refresh" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 730.0
+margin_right = 742.0
+margin_bottom = 24.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ShowHidden" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 746.0
+margin_right = 758.0
+margin_bottom = 24.0
+toggle_mode = true
+flat = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Fav" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 762.0
+margin_right = 774.0
+margin_bottom = 24.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="AddFolder" type="ToolButton" parent="VBoxContainer/HBoxContainer2"]
+margin_left = 778.0
+margin_right = 790.0
+margin_bottom = 24.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+margin_top = 34.0
+margin_right = 790.0
+margin_bottom = 480.0
+size_flags_vertical = 3
+custom_constants/separation = 10
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpecialFolders" type="VBoxContainer" parent="VBoxContainer/HBoxContainer"]
+margin_right = 130.0
+margin_bottom = 446.0
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/HBoxContainer/SpecialFolders"]
+margin_right = 130.0
+margin_bottom = 14.0
+text = "Favourites:"
+
+[node name="Favourites" type="ItemList" parent="VBoxContainer/HBoxContainer/SpecialFolders"]
+margin_top = 18.0
+margin_right = 130.0
+margin_bottom = 146.0
+size_flags_vertical = 3
+
+[node name="Label3" type="Label" parent="VBoxContainer/HBoxContainer/SpecialFolders"]
+margin_top = 150.0
+margin_right = 130.0
+margin_bottom = 164.0
+text = "System:"
+
+[node name="System" type="ItemList" parent="VBoxContainer/HBoxContainer/SpecialFolders"]
+margin_top = 168.0
+margin_right = 130.0
+margin_bottom = 296.0
+size_flags_vertical = 3
+
+[node name="Label2" type="Label" parent="VBoxContainer/HBoxContainer/SpecialFolders"]
+margin_top = 300.0
+margin_right = 130.0
+margin_bottom = 314.0
+text = "Recent:"
+
+[node name="Recent" type="ItemList" parent="VBoxContainer/HBoxContainer/SpecialFolders"]
+margin_top = 318.0
+margin_right = 130.0
+margin_bottom = 446.0
+size_flags_vertical = 3
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="VBoxContainer/HBoxContainer"]
+margin_left = 140.0
+margin_right = 790.0
+margin_bottom = 446.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 5.0
+custom_constants/separation = 10
+
+[node name="Files" type="Tree" parent="VBoxContainer/HBoxContainer/VBoxContainer2"]
+margin_right = 650.0
+margin_bottom = 382.0
+size_flags_vertical = 3
+hide_root = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/HBoxContainer/VBoxContainer2"]
+margin_top = 392.0
+margin_right = 650.0
+margin_bottom = 416.0
+
+[node name="File" type="LineEdit" parent="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
+margin_right = 430.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="Filters" type="OptionButton" parent="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
+margin_left = 434.0
+margin_right = 650.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 216, 0 )
+rect_clip_content = true
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.5
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer/HBoxContainer/VBoxContainer2"]
+margin_left = 539.0
+margin_top = 426.0
+margin_right = 650.0
+margin_bottom = 446.0
+size_flags_horizontal = 8
+custom_constants/separation = 10
+
+[node name="Cancel" type="Button" parent="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer2"]
+margin_right = 54.0
+margin_bottom = 20.0
+text = "Cancel"
+
+[node name="Positive" type="Button" parent="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer2"]
+margin_left = 64.0
+margin_right = 111.0
+margin_bottom = 20.0
+text = "Open"
+
+[node name="NothingSelected" type="AcceptDialog" parent="."]
+visible = true
+margin_right = 397.0
+margin_bottom = 58.0
+window_title = "Info"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="OverrideDLG" type="ConfirmationDialog" parent="."]
+visible = true
+margin_right = 396.0
+margin_bottom = 70.0
+window_title = "Warning"
+dialog_text = "File already exists! Do you want to replace it?"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="DeleteFavDLG" type="ConfirmationDialog" parent="."]
+visible = true
+margin_right = 396.0
+margin_bottom = 70.0
+window_title = "Warning"
+dialog_text = "Do you really want to delete the selected favorite?"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="NewFolderDLG" type="WindowDialog" parent="."]
+visible = true
+margin_right = 349.0
+margin_bottom = 87.0
+popup_exclusive = true
+window_title = "New folder"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="MarginContainer" type="MarginContainer" parent="NewFolderDLG"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NewFolderDLG/MarginContainer"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 339.0
+margin_bottom = 77.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="NewFolderDLG/MarginContainer/VBoxContainer"]
+margin_right = 329.0
+margin_bottom = 14.0
+text = "Folder name"
+
+[node name="FolderName" type="LineEdit" parent="NewFolderDLG/MarginContainer/VBoxContainer"]
+margin_top = 18.0
+margin_right = 329.0
+margin_bottom = 42.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="NewFolderDLG/MarginContainer/VBoxContainer"]
+margin_top = 46.0
+margin_right = 329.0
+margin_bottom = 66.0
+
+[node name="Cancel" type="Button" parent="NewFolderDLG/MarginContainer/VBoxContainer/HBoxContainer"]
+margin_right = 54.0
+margin_bottom = 20.0
+text = "Cancel"
+
+[node name="Ok" type="Button" parent="NewFolderDLG/MarginContainer/VBoxContainer/HBoxContainer"]
+margin_left = 58.0
+margin_right = 88.0
+margin_bottom = 20.0
+text = "Ok"
+
+[node name="PopupMenu" type="PopupMenu" parent="."]
+margin_right = 149.0
+margin_bottom = 84.0
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer2/Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer2/Forward" to="." method="_on_forward_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer2/Up" to="." method="_on_folder_up_pressed"]
+[connection signal="text_entered" from="VBoxContainer/HBoxContainer2/Path" to="." method="_on_Path_text_entered"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer2/Refresh" to="." method="_on_refresh_pressed"]
+[connection signal="toggled" from="VBoxContainer/HBoxContainer2/ShowHidden" to="." method="_on_ShowHidden_toggled"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer2/Fav" to="." method="_on_fav_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer2/AddFolder" to="." method="_on_addfolder_pressed" binds= [ 0 ]]
+[connection signal="gui_input" from="VBoxContainer/HBoxContainer/SpecialFolders/Favourites" to="." method="_on_favourites_gui_input"]
+[connection signal="item_activated" from="VBoxContainer/HBoxContainer/SpecialFolders/Favourites" to="." method="_on_favourites_item_activated"]
+[connection signal="item_selected" from="VBoxContainer/HBoxContainer/SpecialFolders/System" to="." method="_on_system_item_selected"]
+[connection signal="item_activated" from="VBoxContainer/HBoxContainer/SpecialFolders/Recent" to="." method="_on_recent_item_activated"]
+[connection signal="gui_input" from="VBoxContainer/HBoxContainer/VBoxContainer2/Files" to="." method="_on_files_gui_input"]
+[connection signal="item_activated" from="VBoxContainer/HBoxContainer/VBoxContainer2/Files" to="." method="_on_files_item_activated"]
+[connection signal="item_selected" from="VBoxContainer/HBoxContainer/VBoxContainer2/Files" to="." method="_on_files_item_selected"]
+[connection signal="multi_selected" from="VBoxContainer/HBoxContainer/VBoxContainer2/Files" to="." method="_on_files_multi_selected"]
+[connection signal="text_entered" from="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer/File" to="." method="_on_File_text_entered"]
+[connection signal="item_selected" from="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer/Filters" to="." method="_on_filters_item_selected"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer2/Cancel" to="." method="_on_cancel_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/VBoxContainer2/HBoxContainer2/Positive" to="." method="_on_positive_pressed"]
+[connection signal="confirmed" from="OverrideDLG" to="." method="_on_override_confirmed"]
+[connection signal="confirmed" from="DeleteFavDLG" to="." method="_on_delete_fav_confirmed"]
+[connection signal="text_entered" from="NewFolderDLG/MarginContainer/VBoxContainer/FolderName" to="." method="_on_foldername_text_entered"]
+[connection signal="pressed" from="NewFolderDLG/MarginContainer/VBoxContainer/HBoxContainer/Cancel" to="." method="_on_new_folder_cancel_pressed"]
+[connection signal="pressed" from="NewFolderDLG/MarginContainer/VBoxContainer/HBoxContainer/Ok" to="." method="_on_new_folde_ok_pressed"]
+[connection signal="id_pressed" from="PopupMenu" to="." method="_on_addfolder_pressed"]

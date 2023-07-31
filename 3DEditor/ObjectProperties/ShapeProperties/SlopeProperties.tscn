@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://addons/tooluis/Scenes/Properties/VectorProperty.tscn" type="PackedScene" id=1]
+[ext_resource path="res://3DEditor/ObjectProperties/ShapeProperties/SlopeProperties.gd" type="Script" id=2]
+
+[node name="CubeProperties" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -1024.0
+margin_bottom = -518.0
+rect_min_size = Vector2( 0, 82 )
+size_flags_horizontal = 3
+script = ExtResource( 2 )
+
+[node name="VectorProperty" parent="." instance=ExtResource( 1 )]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+title = "Extents"
+value = Vector3( 1, 1, 1 )
+default_value = Vector3( 1, 1, 1 )
+
+[connection signal="value_changed" from="VectorProperty" to="." method="_on_VectorProperty_value_changed"]

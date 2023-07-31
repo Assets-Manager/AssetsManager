@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://addons/tooluis/Scripts/Properties/NumericEdit.gd" type="Script" id=1]
+
+[node name="NumericEdit" type="LineEdit"]
+margin_right = 58.0
+margin_bottom = 24.0
+text = "0"
+script = ExtResource( 1 )
+
+[connection signal="focus_exited" from="." to="." method="_on_focus_exited"]
+[connection signal="text_entered" from="." to="." method="_on_text_entered"]
