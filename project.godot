@@ -51,7 +51,7 @@ _global_script_class_icons={
 [application]
 
 config/name="AssetsBrowser"
-run/main_scene="res://3DEditor/AssetsViewer.tscn"
+run/main_scene="res://Browser/Browser.tscn"
 config/icon="res://icon.png"
 
 [editor_plugins]
