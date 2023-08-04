@@ -24,7 +24,7 @@ func generate(path : String) -> Texture:
 	var offset : Vector3 = aabb.position + aabb.size * 0.5
 	aabb.position -= offset
 	
-	var xform : Transform
+	var xform : Transform = Transform()
 	xform.basis = Basis().rotated(Vector3(0, 1, 0), -PI * 0.125);
 	xform.basis = Basis().rotated(Vector3(1, 0, 0), PI * 0.125) * xform.basis;
 	var rot_aabb : AABB = xform.xform(aabb)

@@ -14,6 +14,9 @@ func get_total_files() -> int:
 	
 func set_value(value : int) -> void:
 	_Progressbar.value = value
+	
+func get_value() -> int:
+	return _Progressbar.value
 
 func increment_value() -> void:
 	_Progressbar.value += 1
