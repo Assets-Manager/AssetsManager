@@ -58,6 +58,9 @@ func open(path : String) -> bool:
 		
 	return false
 	
+func get_parent_dir_id(directoryId: int) -> int:
+	return AssetsDatabase.get_parent_dir_id(directoryId)
+	
 func query_assets(directoryId : int, search: String, skip: int, count: int) -> Array:
 	var results := AssetsDatabase.query_assets(directoryId, search, skip, count)
 	
@@ -81,6 +84,9 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 	
 func get_assets_count(directoryId : int, search : String) -> int:
 	return AssetsDatabase.get_assets_count(directoryId, search)
+
+func create_directory(parentId : int, name : String) -> int:
+	return AssetsDatabase.create_directory(parentId, name)
 
 func _process(_delta: float) -> void:
 	if _Thread && !_Thread.is_alive():

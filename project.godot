@@ -66,6 +66,8 @@ enabled=PoolStringArray( "res://addons/godot-sqlite/plugin.cfg", "res://addons/t
 [gui]
 
 common/drop_mouse_on_gui_input_disabled=true
+theme/custom="res://Assets/theme.theme"
+theme/custom_font="res://Assets/noto-sans-regular.tres"
 
 [physics]
 
@@ -74,4 +76,5 @@ common/enable_pause_aware_picking=true
 [rendering]
 
 gles3/shaders/shader_compilation_mode=2
+environment/default_clear_color=Color( 0.0941176, 0.0901961, 0.121569, 1 )
 environment/default_environment="res://default_env.tres"

@@ -1,9 +1,43 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://Browser/Card.gd" type="Script" id=1]
 
+[sub_resource type="Animation" id=1]
+resource_name = "Hover"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:rect_scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector2( 1, 1 ), Vector2( 1.1, 1.1 ) ]
+}
+
+[sub_resource type="Animation" id=2]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:rect_scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ Vector2( 1, 1 ) ]
+}
+
 [node name="Card" type="MarginContainer"]
 rect_min_size = Vector2( 192, 192 )
+rect_pivot_offset = Vector2( 96, 96 )
+focus_mode = 1
+mouse_default_cursor_shape = 2
 custom_constants/margin_right = 8
 custom_constants/margin_top = 8
 custom_constants/margin_left = 8
@@ -15,10 +49,13 @@ margin_left = 8.0
 margin_top = 8.0
 margin_right = 184.0
 margin_bottom = 184.0
+mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Card"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+rect_clip_content = true
+mouse_filter = 2
 custom_constants/margin_right = 16
 custom_constants/margin_top = 16
 custom_constants/margin_left = 16
@@ -29,16 +66,29 @@ margin_left = 16.0
 margin_top = 16.0
 margin_right = 160.0
 margin_bottom = 160.0
+rect_clip_content = true
+mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="Card/MarginContainer/VBoxContainer"]
 margin_right = 144.0
-margin_bottom = 126.0
+margin_bottom = 117.0
+mouse_filter = 2
 size_flags_vertical = 3
 expand = true
 stretch_mode = 6
 
 [node name="Title" type="Label" parent="Card/MarginContainer/VBoxContainer"]
-margin_top = 130.0
+margin_top = 121.0
 margin_right = 144.0
 margin_bottom = 144.0
+rect_clip_content = true
 text = "Test"
+clip_text = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+anims/Hover = SubResource( 1 )
+anims/RESET = SubResource( 2 )
+
+[connection signal="gui_input" from="." to="." method="_on_Card_gui_input"]
+[connection signal="mouse_entered" from="." to="." method="_on_Card_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_Card_mouse_exited"]

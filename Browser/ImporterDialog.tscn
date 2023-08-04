@@ -7,7 +7,6 @@ margin_right = 320.0
 margin_bottom = 88.0
 rect_min_size = Vector2( 320, 88 )
 popup_exclusive = true
-window_title = "Importing files"
 script = ExtResource( 1 )
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
@@ -24,7 +23,7 @@ custom_constants/separation = 10
 [node name="Label" type="Label" parent="CenterContainer/VBoxContainer"]
 margin_right = 226.0
 margin_bottom = 14.0
-text = "Inporting assets, please be patient."
+text = "Importing assets, please be patient."
 
 [node name="ProgressBar" type="ProgressBar" parent="CenterContainer/VBoxContainer"]
 margin_top = 24.0

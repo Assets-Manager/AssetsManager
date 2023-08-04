@@ -21,6 +21,21 @@ func open(path : String) -> bool:
 		
 	return false
 
+func get_parent_dir_id(directoryId: int) -> int:
+	if _DB:
+		var result : Array = _DB.select_rows("directories", "parent_id = " + str(directoryId), ["id"])
+		if !result.empty():
+			return result[0].id
+		
+	return 0
+
+func create_directory(parentId : int, name : String) -> int:
+	if _DB:
+		if _DB.insert_row("directories", {"name": name, "parent_id": null if parentId == 0 else parentId}):
+			return _DB.last_insert_rowid
+			
+	return 0
+
 func get_assets_count(directoryId : int, search : String) -> int:
 	if _DB:
 		var count : int = 0
@@ -39,17 +54,23 @@ func get_assets_count(directoryId : int, search : String) -> int:
 
 func query_assets(directoryId : int, search: String, skip: int, count: int) -> Array:
 	if _DB:
-		if _DB.query_with_bindings("SELECT id, name FROM directories WHERE parent_id = ? AND name LIKE ? LIMIT ?, ?", [null if directoryId == 0 else directoryId, '%' + search + '%', skip, count]):
-			var result : Array = _DB.query_result
-			if result.size() < count:
-				if directoryId != 0:
-					if _DB.query_with_bindings("SELECT a.id, a.filename as name, a.thumbnail FROM assets as a LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?) WHERE a.id = b.ref_assets_id AND a.filename LIKE ? LIMIT ?, ?", [directoryId, '%' + search + '%', skip, count - result.size()]):
-						result.append_array(_DB.query_result)
-				else:
-					if _DB.query_with_bindings("SELECT id, filename as name, thumbnail FROM assets WHERE filename LIKE ? LIMIT ?, ?", ['%' + search + '%', skip, count - result.size()]):
-						result.append_array(_DB.query_result)
+		var result : Array = []
+		if directoryId != 0:
+			if _DB.query_with_bindings("SELECT id, name FROM directories WHERE parent_id = ? AND name LIKE ? LIMIT ?, ?", [null if directoryId == 0 else directoryId, '%' + search + '%', skip, count]):
+				result = _DB.query_result
+		else:
+			if _DB.query_with_bindings("SELECT id, name FROM directories WHERE parent_id IS NULL AND name LIKE ? LIMIT ?, ?", ['%' + search + '%', skip, count]):
+				result = _DB.query_result
+		
+		if result.size() < count:
+			if directoryId != 0:
+				if _DB.query_with_bindings("SELECT a.id, a.filename as name, a.thumbnail FROM assets as a LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?) WHERE a.id = b.ref_assets_id AND a.filename LIKE ? LIMIT ?, ?", [directoryId, '%' + search + '%', skip, count - result.size()]):
+					result.append_array(_DB.query_result)
+			else:
+				if _DB.query_with_bindings("SELECT id, filename as name, thumbnail FROM assets WHERE filename LIKE ? LIMIT ?, ?", ['%' + search + '%', skip, count - result.size()]):
+					result.append_array(_DB.query_result)
 				
-			return result
+		return result
 	return []
 
 func add_asset(path: String, thumbnailName, type) -> bool:

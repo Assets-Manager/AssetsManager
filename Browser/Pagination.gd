@@ -31,13 +31,17 @@ func _update_page_count() -> void:
 		
 		if current_page == total_pages:
 			_Right.disabled = true
+			_Right.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		else:
 			_Right.disabled = false
+			_Right.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			
-		if current_page == 1:
+		if current_page <= 1:
 			_Left.disabled = true
+			_Left.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		else:
 			_Left.disabled = false
+			_Left.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			
 		emit_signal("page_update", current_page)
 		
