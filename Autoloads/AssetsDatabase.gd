@@ -21,13 +21,40 @@ func open(path : String) -> bool:
 		
 	return false
 
+func move_directory(parent_id : int, child_id : int) -> bool:
+	if _DB:
+		return _DB.update_rows("directories", "id=" + str(child_id), {"parent_id": null if parent_id == 0 else parent_id})
+	return false
+	
+func move_asset(parent_id : int, asset_id : int) -> bool:
+	if _DB:
+		if _DB.delete_rows("asset_directory_rel", "ref_assets_id=" + str(asset_id)):
+			if parent_id != 0:
+				return _DB.insert_row("asset_directory_rel", {'ref_assets_id': asset_id, "ref_directory_id": parent_id})
+			return true
+	return false
+
 func get_parent_dir_id(directoryId: int) -> int:
 	if _DB:
-		var result : Array = _DB.select_rows("directories", "parent_id = " + str(directoryId), ["id"])
+		var result : Array = _DB.select_rows("directories", "id = " + str(directoryId), ["parent_id"])
 		if !result.empty():
-			return result[0].id
+			return result[0].parent_id if result[0].parent_id != null else 0
 		
 	return 0
+
+func delete_directory(directoryId: int) -> bool:
+	if _DB:
+		return _DB.delete_rows("directories", "id=" + str(directoryId))
+		
+	return false
+
+func get_asset(asset_id : int) -> Dictionary:
+	if _DB:
+		if _DB.query_with_bindings("SELECT * from assets WHERE id = ?", [asset_id]):
+			if !_DB.query_result.empty():
+				return _DB.query_result[0]
+		
+	return {}
 
 func create_directory(parentId : int, name : String) -> int:
 	if _DB:
@@ -67,7 +94,7 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 				if _DB.query_with_bindings("SELECT a.id, a.filename as name, a.thumbnail FROM assets as a LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?) WHERE a.id = b.ref_assets_id AND a.filename LIKE ? LIMIT ?, ?", [directoryId, '%' + search + '%', skip, count - result.size()]):
 					result.append_array(_DB.query_result)
 			else:
-				if _DB.query_with_bindings("SELECT id, filename as name, thumbnail FROM assets WHERE filename LIKE ? LIMIT ?, ?", ['%' + search + '%', skip, count - result.size()]):
+				if _DB.query_with_bindings("SELECT a.id, a.filename as name, a.thumbnail FROM assets as a LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id) WHERE a.filename LIKE ? AND b.ref_directory_id IS NULL LIMIT ?, ?", ['%' + search + '%', skip, count - result.size()]):
 					result.append_array(_DB.query_result)
 				
 		return result

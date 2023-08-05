@@ -1,6 +1,8 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Browser/Card.gd" type="Script" id=1]
+[ext_resource path="res://Assets/Material Icons/delete.svg" type="Texture" id=2]
+[ext_resource path="res://Assets/Material Icons/save.svg" type="Texture" id=3]
 
 [sub_resource type="Animation" id=1]
 resource_name = "Hover"
@@ -85,6 +87,32 @@ rect_clip_content = true
 text = "Test"
 clip_text = true
 
+[node name="HBoxContainer" type="HBoxContainer" parent="Card"]
+anchor_right = 1.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+
+[node name="Delete" type="ToolButton" parent="Card/HBoxContainer"]
+margin_right = 33.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+hint_tooltip = "Delete directory"
+mouse_default_cursor_shape = 2
+icon = ExtResource( 2 )
+icon_align = 1
+expand_icon = true
+
+[node name="Export" type="ToolButton" parent="Card/HBoxContainer"]
+margin_left = 37.0
+margin_right = 70.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+hint_tooltip = "Export asset(s)"
+mouse_default_cursor_shape = 2
+icon = ExtResource( 3 )
+icon_align = 1
+expand_icon = true
+
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 anims/Hover = SubResource( 1 )
 anims/RESET = SubResource( 2 )
@@ -92,3 +120,5 @@ anims/RESET = SubResource( 2 )
 [connection signal="gui_input" from="." to="." method="_on_Card_gui_input"]
 [connection signal="mouse_entered" from="." to="." method="_on_Card_mouse_entered"]
 [connection signal="mouse_exited" from="." to="." method="_on_Card_mouse_exited"]
+[connection signal="pressed" from="Card/HBoxContainer/Delete" to="." method="_on_Delete_pressed"]
+[connection signal="pressed" from="Card/HBoxContainer/Export" to="." method="_on_Export_pressed"]

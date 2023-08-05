@@ -11,8 +11,12 @@ onready var _Search := $MarginContainer/HBoxContainer/Search
 onready var _InputBox := $CanvasLayer/InputBox
 onready var _ScrollContainer := $ScrollContainer
 onready var _BackButton := $MarginContainer/HBoxContainer/Back
+onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
+onready var _NativeDialog := $NativeDialog
 
 var _CurrentDir : int = 0
+
+var _DirectoryToDelete : int = -1
 
 func _ready() -> void:
 	if AssetsLibrary.open("c:/AssetsTest"):
@@ -35,6 +39,30 @@ func _card_pressed(id: int, is_dir : bool) -> void:
 		_BackButton.mouse_default_cursor_shape = Control.CURSOR_ARROW if (_CurrentDir == 0) else Control.CURSOR_POINTING_HAND
 		_BackButton.disabled = _CurrentDir == 0
 
+func _export_assets(id: int, is_dir : bool) -> void:
+	var asset : Dictionary = AssetsDatabase.get_asset(id)
+	if asset.has("filename"):
+		_NativeDialog.initial_path = asset["filename"]
+		var file : PoolStringArray = _NativeDialog.show_modal()
+		if !file.empty():
+			if !is_dir:
+				AssetsLibrary.export_asset(id, file[0])
+	
+func _delete_card(id: int, is_dir : bool) -> void:
+	if is_dir:
+		_DirectoryToDelete = id
+		_DeleteDirDialog.popup_centered()
+		
+func _asset_dropped(id : int, dopped_id : int, dropped_is_dir : bool) -> void:
+	var moved_succefully : bool = false
+	if dropped_is_dir:
+		moved_succefully = AssetsLibrary.move_directory(id, dopped_id)
+	else:
+		moved_succefully = AssetsLibrary.move_asset(id, dopped_id)
+	
+	if moved_succefully:
+		_card_pressed(_CurrentDir, true)
+		
 func _new_asset_added(name : String, thumbnail : Texture) -> void:
 	if _Cards.get_child_count() < ITEMS_PER_PAGE:
 		var tmp := CARD.instance()
@@ -63,6 +91,9 @@ func _on_Pagination_page_update(page : int) -> void:
 			if count >= _Cards.get_child_count():
 				tmp = CARD.instance()
 				tmp.connect("pressed", self, "_card_pressed")
+				tmp.connect("delete_card", self, "_delete_card")
+				tmp.connect("asset_dropped", self, "_asset_dropped")
+				tmp.connect("export_assets", self, "_export_assets")
 				_Cards.add_child(tmp)
 			else:
 				tmp = _Cards.get_child(count)
@@ -71,7 +102,6 @@ func _on_Pagination_page_update(page : int) -> void:
 			count += 1
 			
 			tmp.id = card["id"]
-			
 			if card.has("thumbnail"):
 				tmp.set_texture(card["thumbnail"])
 				tmp.is_dir = false
@@ -82,19 +112,26 @@ func _on_Pagination_page_update(page : int) -> void:
 			tmp.set_title(card["name"])
 
 func _on_Search_text_entered(_new_text: String) -> void:
-	_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(_CurrentDir, _Search.text) / float(ITEMS_PER_PAGE)))
-	_Pagination.current_page = 1
+	pass
+	#_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(_CurrentDir, _Search.text) / float(ITEMS_PER_PAGE)))
+	#_Pagination.current_page = 1
 
 func _on_CreateDir_pressed() -> void:
 	_InputBox.popup_centered()
 
 func _on_InputBox_name_entered(name : String) -> void:
+	if name.empty():
+		return
+	
 	var dir := AssetsLibrary.create_directory(_CurrentDir, name)
 	if dir != 0:
 		var tmp
 		if (_Cards.get_child_count() == 0) || (_Cards.get_child_count() < ITEMS_PER_PAGE):
 			tmp = CARD.instance()
 			tmp.connect("pressed", self, "_card_pressed")
+			tmp.connect("delete_card", self, "_delete_card")
+			tmp.connect("asset_dropped", self, "_asset_dropped")
+			tmp.connect("export_assets", self, "_export_assets")
 			_Cards.add_child(tmp)
 		else:
 			tmp = _Cards.get_children()[_Cards.get_child_count() - 1]
@@ -104,9 +141,26 @@ func _on_InputBox_name_entered(name : String) -> void:
 		tmp.set_title(name)
 		tmp.id = dir
 		tmp.is_dir = true
+		tmp.visible = true
 	else:
 		# TODO: Errorhandling
 		pass
 
 func _on_Back_pressed() -> void:
 	_card_pressed(AssetsLibrary.get_parent_dir_id(_CurrentDir), true)
+
+func _on_DeleteDirDialog_confirmed() -> void:
+	if AssetsLibrary.delete_directory(_DirectoryToDelete):
+		# Go back into the root directory.
+		if _CurrentDir == _DirectoryToDelete:
+			_card_pressed(0, true)
+		else:
+			_card_pressed(_CurrentDir, true)
+	else:
+		# Todo: Errorhandling
+		pass
+
+func _on_Search_text_changed(new_text: String) -> void:
+	#if (_Search.text.length() >= 3) || _Search.text.empty():
+	_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(_CurrentDir, _Search.text) / float(ITEMS_PER_PAGE)))
+	_Pagination.current_page = 1

@@ -57,6 +57,22 @@ func open(path : String) -> bool:
 		return true
 		
 	return false
+
+func export_asset(asset_id: int, path : String) -> void:
+	var asset : Dictionary = AssetsDatabase.get_asset(asset_id)
+	if asset.has("filename"):
+		_Directory.copy(_AssetsPath + "/" + asset["filename"], path.replace("\\", "/"))
+		if asset["filename"].get_extension() == "obj":
+			_Directory.copy(_AssetsPath + "/" + asset["filename"].get_basename() + ".mtl", path.replace("\\", "/").get_basename() + ".mtl")
+	
+func move_directory(parent_id : int, child_id : int) -> bool:
+	return AssetsDatabase.move_directory(parent_id, child_id)
+	
+func move_asset(parent_id : int, asset_id : int) -> bool:
+	return AssetsDatabase.move_asset(parent_id, asset_id)
+	
+func delete_directory(directoryId: int) -> bool:
+	return AssetsDatabase.delete_directory(directoryId)
 	
 func get_parent_dir_id(directoryId: int) -> int:
 	return AssetsDatabase.get_parent_dir_id(directoryId)
