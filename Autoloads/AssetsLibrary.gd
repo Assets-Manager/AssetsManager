@@ -58,6 +58,21 @@ func open(path : String) -> bool:
 		
 	return false
 
+func export_assets(directory_id: int, path : String) -> void:
+	path = path.replace("\\", "/")
+	var directories : Array = [directory_id]
+	while !directories.empty():
+		directory_id = directories.pop_back()
+		var result : Dictionary = AssetsDatabase.get_assets(directory_id)
+		directories.append_array(result.subdirectories)
+		
+		var dirname : String = AssetsDatabase.get_dir_name(directory_id)
+		if !_Directory.dir_exists(path + "/" + dirname):
+			_Directory.make_dir(path + "/" + dirname)
+		
+		for asset in result.assets:
+			export_asset(asset.id, path + "/" + dirname + "/" + asset.name)
+	
 func export_asset(asset_id: int, path : String) -> void:
 	var asset : Dictionary = AssetsDatabase.get_asset(asset_id)
 	if asset.has("filename"):

@@ -135,7 +135,6 @@ dialog_type = 1
 [connection signal="pressed" from="MarginContainer/HBoxContainer/Back" to="." method="_on_Back_pressed"]
 [connection signal="pressed" from="MarginContainer/HBoxContainer/CreateDir" to="." method="_on_CreateDir_pressed"]
 [connection signal="text_changed" from="MarginContainer/HBoxContainer/Search" to="." method="_on_Search_text_changed"]
-[connection signal="text_entered" from="MarginContainer/HBoxContainer/Search" to="." method="_on_Search_text_entered"]
 [connection signal="item_rect_changed" from="ScrollContainer" to="ScrollContainer" method="_on_item_rect_changed"]
 [connection signal="page_update" from="MarginContainer2/Pagination" to="." method="_on_Pagination_page_update"]
 [connection signal="name_entered" from="CanvasLayer/InputBox" to="." method="_on_InputBox_name_entered"]

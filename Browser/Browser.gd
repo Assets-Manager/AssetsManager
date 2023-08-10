@@ -40,13 +40,19 @@ func _card_pressed(id: int, is_dir : bool) -> void:
 		_BackButton.disabled = _CurrentDir == 0
 
 func _export_assets(id: int, is_dir : bool) -> void:
-	var asset : Dictionary = AssetsDatabase.get_asset(id)
-	if asset.has("filename"):
-		_NativeDialog.initial_path = asset["filename"]
-		var file : PoolStringArray = _NativeDialog.show_modal()
-		if !file.empty():
-			if !is_dir:
+	if !is_dir:	# Export one asset file
+		_NativeDialog.dialog_type = 1
+		var asset : Dictionary = AssetsDatabase.get_asset(id)
+		if asset.has("filename"):
+			_NativeDialog.initial_path = asset["filename"]
+			var file : PoolStringArray = _NativeDialog.show_modal()
+			if !file.empty():
 				AssetsLibrary.export_asset(id, file[0])
+	else:	# Export a folder
+		_NativeDialog.dialog_type = 2
+		var folder : PoolStringArray = _NativeDialog.show_modal()
+		if !folder.empty():
+			AssetsLibrary.export_assets(id, folder[0])
 	
 func _delete_card(id: int, is_dir : bool) -> void:
 	if is_dir:
@@ -110,11 +116,6 @@ func _on_Pagination_page_update(page : int) -> void:
 				tmp.is_dir = true
 				
 			tmp.set_title(card["name"])
-
-func _on_Search_text_entered(_new_text: String) -> void:
-	pass
-	#_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(_CurrentDir, _Search.text) / float(ITEMS_PER_PAGE)))
-	#_Pagination.current_page = 1
 
 func _on_CreateDir_pressed() -> void:
 	_InputBox.popup_centered()
