@@ -1,48 +1,62 @@
 extends Node
 
-signal new_asset_added(name, thumbnail)
+const IMPORTERS_PATH = "res://FormatImporters/"
+
+signal new_asset_added(id, name, thumbnail)
 signal update_total_import_assets(count)
-
-const PREVIEW = preload("res://Preview/Preview.tscn")
-const SUPPORTED_FORMATS = []
-
-const MODEL_FORMATS = [
-	"gltf", "glb", 
-	"obj", 
-	"fbx"
-]
-
-const IMAGE_FORMATS = [
-	"png", 
-	"jpg", "jpeg", 
-	"bmp", 
-	"hdr", 
-	"exr", 
-	"svg", "svgz",
-	"tga", 
-	"webp"
-]
 
 var _AssetsPath : String = ""
 var _QueueLock : Mutex = Mutex.new()
 var _Thread : Thread = null
 var _FileQueue : Array = []
 var _TotalFilecount : int = 0
-var _Preview
 var _QuitThread : bool = false
 var _Directory : Directory = Directory.new()
+var _Importers : Dictionary = {}
 
-func _ready() -> void:
-	SUPPORTED_FORMATS.append_array(MODEL_FORMATS)
-	SUPPORTED_FORMATS.append_array(IMAGE_FORMATS)
-	
-	_Preview = PREVIEW.instance()
-	add_child(_Preview)
-	
+# Joins the running thread.
 func _exit_tree() -> void:
 	_QuitThread = true
 	if _Thread:
 		_Thread.wait_to_finish()
+		
+# Loads all importers.
+func _load_importers() -> void:
+	_Importers.clear()
+	for child in get_children():
+		child.queue_free()
+	
+	var dir := Directory.new()
+	if dir.open(IMPORTERS_PATH) == OK:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if !dir.current_is_dir():
+				var script = load(IMPORTERS_PATH + file_name)
+				if !script.get_type().empty():
+					var id : int = AssetsDatabase.get_or_add_asset_type(script.get_type())
+					if id != -1:
+						var importer : IFormatImporter = script.new()
+						importer.register(self, id)
+						_Importers[script.get_type()] = importer
+						
+			file_name = dir.get_next()
+		
+# ---------------------------------------------
+# 					Helpers
+# ---------------------------------------------
+	
+# Returns the currently opened asset path
+func get_assets_path() -> String:
+	return _AssetsPath
+	
+# Builds the absolute path to the asset library
+func build_assets_path(subpath : String) -> String:
+	return _AssetsPath + "/" + subpath
+	
+# Returns the path to the thumbnails directory.
+func get_thumbnail_path() -> String:
+	return _AssetsPath + "/thumbnails"
 	
 # Opens a given assets library
 # Returns true on success
@@ -53,11 +67,26 @@ func open(path : String) -> bool:
 		_AssetsPath.erase(_AssetsPath.length() - 1, 1)
 	
 	if AssetsDatabase.open(_AssetsPath + "/assets.db"):
+		# Creates the thumbnail directory.
+		if !_Directory.dir_exists(get_thumbnail_path()):
+			_Directory.make_dir(get_thumbnail_path())
+			
+		_load_importers()
+		
 		get_tree().connect("files_dropped", self, "_files_dropped")
 		return true
 		
 	return false
 
+# Returns a list of all directories. Ordered by the parents.
+func get_all_directories() -> Array:
+	return AssetsDatabase.get_all_directories()
+
+# ---------------------------------------------
+# 					Export
+# ---------------------------------------------
+
+# Exports a directory and all it's content.
 func export_assets(directory_id: int, path : String) -> void:
 	path = path.replace("\\", "/")
 	var directories : Array = [directory_id]
@@ -72,22 +101,45 @@ func export_assets(directory_id: int, path : String) -> void:
 		
 		for asset in result.assets:
 			export_asset(asset.id, path + "/" + dirname + "/" + asset.name)
-	
+
+# Export a single file.
 func export_asset(asset_id: int, path : String) -> void:
 	var asset : Dictionary = AssetsDatabase.get_asset(asset_id)
 	if asset.has("filename"):
-		_Directory.copy(_AssetsPath + "/" + asset["filename"], path.replace("\\", "/"))
+		_Directory.copy(build_assets_path(asset["filename"]), path.replace("\\", "/"))
 		if asset["filename"].get_extension() == "obj":
-			_Directory.copy(_AssetsPath + "/" + asset["filename"].get_basename() + ".mtl", path.replace("\\", "/").get_basename() + ".mtl")
+			_Directory.copy(build_assets_path(asset["filename"].get_basename() + ".mtl"), path.replace("\\", "/").get_basename() + ".mtl")
+
+# ---------------------------------------------
+# 					Add
+# ---------------------------------------------
 	
+func add_asset(path: String, thumbnailName, type) -> int:
+	return AssetsDatabase.add_asset(path, thumbnailName, type)
+	
+func create_directory(parentId : int, name : String) -> int:
+	return AssetsDatabase.create_directory(parentId, name)
+	
+# ---------------------------------------------
+# 					Move
+# ---------------------------------------------
+
+# Moves a directory
 func move_directory(parent_id : int, child_id : int) -> bool:
+	if parent_id == child_id:
+		return false
 	return AssetsDatabase.move_directory(parent_id, child_id)
 	
+# Move an asset
 func move_asset(parent_id : int, asset_id : int) -> bool:
 	return AssetsDatabase.move_asset(parent_id, asset_id)
 	
 func delete_directory(directoryId: int) -> bool:
 	return AssetsDatabase.delete_directory(directoryId)
+	
+# ---------------------------------------------
+# 				   Queries
+# ---------------------------------------------
 	
 func get_parent_dir_id(directoryId: int) -> int:
 	return AssetsDatabase.get_parent_dir_id(directoryId)
@@ -99,9 +151,9 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 		if result.has("thumbnail"):
 			var thumbnailpath = ""
 			if result["thumbnail"]:
-				thumbnailpath = _AssetsPath + "/thumbnails/" + result["thumbnail"]
+				thumbnailpath = get_thumbnail_path() + "/" + result["thumbnail"]
 			else:
-				thumbnailpath = _AssetsPath + "/" + result["name"]
+				thumbnailpath = build_assets_path(result["name"])
 				
 			var img := Image.new()
 			img.load(thumbnailpath)
@@ -116,8 +168,9 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 func get_assets_count(directoryId : int, search : String) -> int:
 	return AssetsDatabase.get_assets_count(directoryId, search)
 
-func create_directory(parentId : int, name : String) -> int:
-	return AssetsDatabase.create_directory(parentId, name)
+# ---------------------------------------------
+# 			    Update / Import
+# ---------------------------------------------
 
 func _process(_delta: float) -> void:
 	if _Thread && !_Thread.is_alive():
@@ -129,56 +182,28 @@ func _render_and_index_thread(_unused : Object) -> void:
 	var f : File = File.new()
 	while !_QuitThread:
 		_QueueLock.lock()
-		var file : String = _FileQueue.pop_front()
+		if _FileQueue.empty():
+			break
+		
+		var file_info : Dictionary = _FileQueue.pop_front()
 		_QueueLock.unlock()
-		
-		if f.file_exists(file):
-			var type : String = file.get_extension()
-			var texture : Texture = null
-			if MODEL_FORMATS.find(type) != -1:
-				texture = _render_and_index_3d_model(file)
-			elif IMAGE_FORMATS.find(type) != -1:
-				texture = _render_and_index_image(file)
-			
-			if texture:
-				emit_signal("new_asset_added", file.get_basename().get_file(), texture)
 
-func _render_and_index_image(file : String) -> Texture:
-	if AssetsDatabase.add_asset(file, null, AssetsDatabase.AssetType.IMAGE):
-		_Directory.rename(file, _AssetsPath + "/" + file.get_file())
-		
-		var img := Image.new()
-		img.load(_AssetsPath + "/" + file.get_file())
-		
-		var texture := ImageTexture.new()
-		texture.create_from_image(img, 0)
-		
-		return texture
-		
-	return null
+		if f.file_exists(file_info.file):
+			var importer_result : Dictionary = file_info.importer.import(file_info.file)
+			if !importer_result.empty():
+				var texture : Texture = importer_result.thumbnail
+				if !texture:
+					var img := Image.new()
+					img.load(build_assets_path(importer_result.file))
+					texture = ImageTexture.new()
+					texture.create_from_image(img, 0)
+				
+				emit_signal("new_asset_added", importer_result.id, importer_result.file.get_basename().get_file(), texture)
 
-func _render_and_index_3d_model(file : String) -> Texture:
-	# Just for a unique name, and not for security!
-	var thumbnailName : String = (file.get_file() + Time.get_datetime_string_from_datetime_dict(Time.get_datetime_dict_from_system(), false)).sha256_text() + ".png"
-	if AssetsDatabase.add_asset(file, thumbnailName, AssetsDatabase.AssetType.MODEL):
-		var texture : Texture = _Preview.generate(file)
-		
-		# Creates the thumbnail directory.
-		if !_Directory.dir_exists(_AssetsPath + "/thumbnails"):
-			_Directory.make_dir(_AssetsPath + "/thumbnails")
-
-		# Saves the newly generated thumbnail
-		texture.get_data().save_png(_AssetsPath + "/thumbnails/" + thumbnailName)
-		
-		# Moves the file into the assets library folder.
-		_Directory.rename(file, _AssetsPath + "/" + file.get_file())
-		
-		# Also move the mtl of obj files
-		if file.get_extension().to_lower() == "obj":
-			_Directory.rename(file.get_basename() + ".mtl", _AssetsPath + "/" + file.get_basename().get_file() + ".mtl")
-		
-		return texture
-	
+func _find_importer(ext : String) -> IFormatImporter:
+	for importer in _Importers:
+		if _Importers[importer].get_extensions().find(ext) != -1:
+			return _Importers[importer]
 	return null
 
 # Newly dropped files
@@ -186,8 +211,10 @@ func _files_dropped(files: PoolStringArray, _screen: int) -> void:
 	var newFiles = []
 	var f : File = File.new()
 	for file in files:
-		if f.file_exists(file) && (SUPPORTED_FORMATS.find(file.get_extension().to_lower()) != -1):
-			newFiles.append(file)
+		if f.file_exists(file):
+			var importer : IFormatImporter = _find_importer(file.get_extension().to_lower())
+			if importer:
+				newFiles.append({"file": file, "importer": importer})
 	
 	# No supported files found.
 	if newFiles.empty():
@@ -202,7 +229,9 @@ func _files_dropped(files: PoolStringArray, _screen: int) -> void:
 	_FileQueue.append_array(newFiles)
 	_QueueLock.unlock()
 	
+	_render_and_index_thread(null)
+	
 	# Starts a new thread, but only if no one is already running.
-	if !_Thread:
-		_Thread = Thread.new()
-		_Thread.start(self, "_render_and_index_thread", null)
+#	if !_Thread:
+#		_Thread = Thread.new()
+#		_Thread.start(self, "_render_and_index_thread", null)

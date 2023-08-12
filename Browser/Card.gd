@@ -3,15 +3,27 @@ extends MarginContainer
 signal pressed(id, is_dir)
 signal delete_card(id, is_dir)
 signal export_assets(id, is_dir)
+signal move_to_directory_pressed(id, is_dir)
 signal asset_dropped(id, dopped_id, dropped_is_dir)
+signal open_containing_folder(parent_folder)
 
 onready var _Texture := $Card/MarginContainer/VBoxContainer/TextureRect
 onready var _Title := $Card/MarginContainer/VBoxContainer/Title
 onready var _Animation := $AnimationPlayer
 onready var _Delete := $Card/HBoxContainer/Delete
+onready var _OpenFolder := $Card/HBoxContainer/OpenFolder
 
 var id : int = 0
 var is_dir : bool = false setget set_is_dir
+var _ParentFolder : int = 0
+
+func _ready() -> void:
+	_OpenFolder.hide()
+	
+func set_parent_folder(parent_folder : int) -> void:
+	_ParentFolder = parent_folder
+	
+	_OpenFolder.visible = _ParentFolder != 0
 
 func set_is_dir(value : bool) -> void:
 	is_dir = value
@@ -41,7 +53,7 @@ func _process(delta: float) -> void:
 
 func _on_Card_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if (event.button_index == BUTTON_LEFT) && event.pressed:
+		if (event.button_index == BUTTON_LEFT) && !event.pressed:
 			emit_signal("pressed", id, is_dir)
 
 func _on_Delete_pressed() -> void:
@@ -61,3 +73,9 @@ func get_drag_data(position: Vector2):
 
 func _on_Export_pressed() -> void:
 	emit_signal("export_assets", id, is_dir)
+
+func _on_OpenFolder_pressed() -> void:
+	emit_signal("open_containing_folder", _ParentFolder)
+
+func _on_Move_pressed() -> void:
+	emit_signal("move_to_directory_pressed", id, is_dir)

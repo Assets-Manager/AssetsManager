@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://Browser/Card.gd" type="Script" id=1]
 [ext_resource path="res://Assets/Material Icons/delete.svg" type="Texture" id=2]
 [ext_resource path="res://Assets/Material Icons/save.svg" type="Texture" id=3]
+[ext_resource path="res://Assets/Material Icons/folder_open.svg" type="Texture" id=4]
+[ext_resource path="res://Assets/Material Icons/drive_file_move.svg" type="Texture" id=5]
 
 [sub_resource type="Animation" id=1]
 resource_name = "Hover"
@@ -113,6 +115,35 @@ icon = ExtResource( 3 )
 icon_align = 1
 expand_icon = true
 
+[node name="Control" type="Control" parent="Card/HBoxContainer"]
+margin_left = 74.0
+margin_right = 102.0
+margin_bottom = 33.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="Move" type="ToolButton" parent="Card/HBoxContainer"]
+margin_left = 106.0
+margin_right = 139.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+hint_tooltip = "Move to another directory"
+mouse_default_cursor_shape = 2
+icon = ExtResource( 5 )
+icon_align = 1
+expand_icon = true
+
+[node name="OpenFolder" type="ToolButton" parent="Card/HBoxContainer"]
+margin_left = 143.0
+margin_right = 176.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+hint_tooltip = "Open containing folder"
+mouse_default_cursor_shape = 2
+icon = ExtResource( 4 )
+icon_align = 1
+expand_icon = true
+
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 anims/Hover = SubResource( 1 )
 anims/RESET = SubResource( 2 )
@@ -122,3 +153,5 @@ anims/RESET = SubResource( 2 )
 [connection signal="mouse_exited" from="." to="." method="_on_Card_mouse_exited"]
 [connection signal="pressed" from="Card/HBoxContainer/Delete" to="." method="_on_Delete_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer/Export" to="." method="_on_Export_pressed"]
+[connection signal="pressed" from="Card/HBoxContainer/Move" to="." method="_on_Move_pressed"]
+[connection signal="pressed" from="Card/HBoxContainer/OpenFolder" to="." method="_on_OpenFolder_pressed"]

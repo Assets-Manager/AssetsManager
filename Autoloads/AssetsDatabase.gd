@@ -2,12 +2,6 @@ extends Node
 
 const SQLITE = preload("res://addons/godot-sqlite/godot-sqlite-wrapper.gd")
 
-enum AssetType {
-	MODEL,
-	IMAGE,
-	AUDIO
-}
-
 var _DB : SQLITE = null
 
 # Opens a database
@@ -20,6 +14,13 @@ func open(path : String) -> bool:
 		return _migrate()	# Starts a migration of the database
 		
 	return false
+
+func get_all_directories() -> Array:
+	if _DB:
+		if _DB.query("SELECT * FROM directories ORDER BY parent_id"):
+			return _DB.query_result
+		
+	return []
 
 func move_directory(parent_id : int, child_id : int) -> bool:
 	if _DB:
@@ -56,6 +57,17 @@ func get_dir_name(directory_id : int) -> String:
 		
 	return ""
 
+func get_or_add_asset_type(name : String) -> int:
+	if _DB:
+		if _DB.query_with_bindings("SELECT id FROM asset_types WHERE name = ?", [name]):
+			if !_DB.query_result.empty():
+				return _DB.query_result[0].id
+			else:
+				if _DB.insert_row("asset_types", {"name": name}):
+					return _DB.db.last_insert_rowid
+		
+	return -1
+
 func get_assets(directory_id : int) -> Dictionary:
 	if _DB:
 		var result : Dictionary = {}
@@ -79,7 +91,7 @@ func get_asset(asset_id : int) -> Dictionary:
 func create_directory(parentId : int, name : String) -> int:
 	if _DB:
 		if _DB.insert_row("directories", {"name": name, "parent_id": null if parentId == 0 else parentId}):
-			return _DB.last_insert_rowid
+			return _DB.db.last_insert_rowid
 			
 	return 0
 
@@ -118,7 +130,7 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 		var bindings : Array = ['%' + search + '%', skip, count]
 		
 		# Builds the query for the directories.
-		var query = "SELECT id, name FROM directories WHERE %s name LIKE ? LIMIT ?, ?"
+		var query = "SELECT id, name, parent_id FROM directories WHERE %s name LIKE ? LIMIT ?, ?"
 		if directoryId != 0:
 			query = query % "parent_id = ? AND"
 			bindings.push_front(directoryId)
@@ -143,16 +155,16 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 				skip = 0
 			
 			bindings = ['%' + search + '%', skip, count - result.size()]
-			query = "SELECT a.id, a.filename as name, a.thumbnail FROM assets as a %s WHERE %s a.filename LIKE ? LIMIT ?, ?"
+			query = "SELECT a.id, a.filename as name, a.thumbnail %s FROM assets as a %s WHERE %s a.filename LIKE ? LIMIT ?, ?"
 			if directoryId != 0:
-				query = query % ["LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?)", "a.id = b.ref_assets_id AND"]
+				query = query % ["", "LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?)", "a.id = b.ref_assets_id AND"]
 				bindings.push_front(directoryId)
 			else:
 				# The root directory allows for a global search
 				if search.empty():
-					query = query % ["LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", "b.ref_directory_id IS NULL AND"]
-				else:
-					query = query % ["", ""]
+					query = query % ["", "LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", "b.ref_directory_id IS NULL AND"]
+				else:	# For open containing folder.
+					query = query % [", b.ref_directory_id as parent_id", "LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", ""]
 		
 			# Query all assets.
 			if _DB.query_with_bindings(query, bindings):
@@ -169,13 +181,14 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 		return result
 	return []
 
-func add_asset(path: String, thumbnailName, type) -> bool:
+func add_asset(path: String, thumbnailName, type) -> int:
 	if _DB:
 		var file : File = File.new()
 		var modified : int = file.get_modified_time(path)
 		
-		return _DB.insert_row("assets", {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName})
-	return false
+		if _DB.insert_row("assets", {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName}):
+			return _DB.db.last_insert_rowid
+	return -1
 
 func _migrate() -> bool:
 	var ret = false
@@ -183,6 +196,22 @@ func _migrate() -> bool:
 		var results : Array = _DB.query_result
 		for i in results.size():
 			results[i] = results[i].name
+		
+		if results.find("asset_types") == -1:
+			ret = _DB.create_table("asset_types", {
+				"id": {
+					"data_type": "int",
+					"primary_key": true,
+					"auto_increment": true
+				},
+				"name": {
+					"data_type": "text",
+					"not_null": true,
+					"unique": true
+				},
+			})
+		else:
+			ret = true
 		
 		if results.find("assets") == -1:
 			ret = _DB.create_table("assets", {
@@ -201,7 +230,8 @@ func _migrate() -> bool:
 				},
 				"type": {
 					"data_type": "int",
-					"not_null": true
+					"not_null": true,
+					"foreign_key": "asset_types.id"
 				},
 				"thumbnail": {
 					"data_type": "text"
@@ -209,7 +239,7 @@ func _migrate() -> bool:
 			})
 		else:
 			ret = true
-	
+
 		if results.find("directories") == -1:
 			ret = _DB.query(
 				"CREATE TABLE 'directories' ('id' INTEGER, 'name' TEXT NOT NULL, 'parent_id' INTEGER, FOREIGN KEY('parent_id') REFERENCES 'directories'('id') ON DELETE CASCADE, PRIMARY KEY('id' AUTOINCREMENT));"
