@@ -68,8 +68,8 @@ config/icon="res://icon.png"
 
 [autoload]
 
-AssetsDatabase="*res://Autoloads/AssetsDatabase.gd"
-AssetsLibrary="*res://Autoloads/AssetsLibrary.gd"
+AssetsDatabase="*res://Filesystem/AssetsDatabase.gd"
+AssetsLibrary="*res://Filesystem/AssetsLibrary.gd"
 
 [editor_plugins]
 
@@ -78,8 +78,8 @@ enabled=PoolStringArray( "res://addons/godot-sqlite/plugin.cfg", "res://addons/t
 [gui]
 
 common/drop_mouse_on_gui_input_disabled=true
-theme/custom="res://Assets/theme.theme"
-theme/custom_font="res://Assets/noto-sans-regular.tres"
+theme/custom="res://Assets/Theme/theme.theme"
+theme/custom_font="res://Assets/Theme/noto-sans-regular.tres"
 
 [physics]
 

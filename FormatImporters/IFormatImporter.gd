@@ -26,7 +26,7 @@ static func get_extensions() -> Array:
 	return []
 
 # Imports a new asset
-func import(path: String) -> Dictionary:
+func import(path: String, update_id : int) -> Dictionary:
 	var thumbnail : Texture = _render_thumbnail(path)
 	var thumbnail_path : String = _Library.get_thumbnail_path() + "/" + _generate_thumbnail_name(path)
 	var can_proceed : bool = false
@@ -39,9 +39,15 @@ func import(path: String) -> Dictionary:
 	
 	if can_proceed:
 		if _import_asset(path) == OK:
-			var id : int = _Library.add_asset(path.get_file(), thumbnail_path.get_file() if thumbnail else null, get_type_id())
-			if id != -1:
-				return {"id": id, "file": path.get_file(), "thumbnail": thumbnail}
+			path = _Library.build_assets_path(path.get_file())
+			if update_id != 0:
+				if !_Library.update_asset(update_id, path, thumbnail_path.get_file() if thumbnail else null, get_type_id()):
+					return {}
+			else:
+				update_id = _Library.add_asset(path.get_file(), thumbnail_path.get_file() if thumbnail else null, get_type_id())
+			
+			if update_id != -1:
+				return {"id": update_id, "file": path.get_file(), "thumbnail": thumbnail}
 		_Directory.remove(thumbnail_path)
 	return {}
 

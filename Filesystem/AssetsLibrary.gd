@@ -14,6 +14,8 @@ var _QuitThread : bool = false
 var _Directory : Directory = Directory.new()
 var _Importers : Dictionary = {}
 
+var current_directory : int = 0
+
 # Joins the running thread.
 func _exit_tree() -> void:
 	_QuitThread = true
@@ -21,6 +23,9 @@ func _exit_tree() -> void:
 		_Thread.wait_to_finish()
 		
 # Loads all importers.
+# Allows in the future to add more importers easily.
+# Also allows to create some sort of plugin system, so users can write their own
+# importers without to recompile the whole project.
 func _load_importers() -> void:
 	_Importers.clear()
 	for child in get_children():
@@ -111,7 +116,7 @@ func export_asset(asset_id: int, path : String) -> void:
 			_Directory.copy(build_assets_path(asset["filename"].get_basename() + ".mtl"), path.replace("\\", "/").get_basename() + ".mtl")
 
 # ---------------------------------------------
-# 					Add
+# 				Add / Update
 # ---------------------------------------------
 	
 func add_asset(path: String, thumbnailName, type) -> int:
@@ -119,6 +124,9 @@ func add_asset(path: String, thumbnailName, type) -> int:
 	
 func create_directory(parentId : int, name : String) -> int:
 	return AssetsDatabase.create_directory(parentId, name)
+	
+func update_asset(id : int, path: String, thumbnailName, type) -> bool:
+	return AssetsDatabase.update_asset(id, path, thumbnailName, type)
 	
 # ---------------------------------------------
 # 					Move
@@ -152,7 +160,7 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 			var thumbnailpath = ""
 			if result["thumbnail"]:
 				thumbnailpath = get_thumbnail_path() + "/" + result["thumbnail"]
-			else:
+			else:	# For images, because they are already images.
 				thumbnailpath = build_assets_path(result["name"])
 				
 			var img := Image.new()
@@ -189,16 +197,31 @@ func _render_and_index_thread(_unused : Object) -> void:
 		_QueueLock.unlock()
 
 		if f.file_exists(file_info.file):
-			var importer_result : Dictionary = file_info.importer.import(file_info.file)
-			if !importer_result.empty():
-				var texture : Texture = importer_result.thumbnail
-				if !texture:
-					var img := Image.new()
-					img.load(build_assets_path(importer_result.file))
-					texture = ImageTexture.new()
-					texture.create_from_image(img, 0)
+			# Checks if the asset is already imported
+			var asset_info = AssetsDatabase.get_asset_by_name(file_info.file)
+			var need_import = true
+			if !asset_info.empty():
+				var file : File = File.new()
 				
-				emit_signal("new_asset_added", importer_result.id, importer_result.file.get_basename().get_file(), texture)
+				# Is the dropped file newer, than the current indexed one?
+				var modified : int = file.get_modified_time(file_info.file)
+				need_import = modified > asset_info.last_modified
+			
+			if need_import:
+				var importer_result : Dictionary = file_info.importer.import(file_info.file, asset_info.id if !asset_info.empty() else 0)
+				if !importer_result.empty():
+					var texture : Texture = importer_result.thumbnail
+					if !texture:
+						var img := Image.new()
+						img.load(build_assets_path(importer_result.file))
+						texture = ImageTexture.new()
+						texture.create_from_image(img, 0)
+					
+					# Link the asset with the currently opened directory
+					if current_directory != 0:
+						move_asset(current_directory, importer_result.id)
+					
+					emit_signal("new_asset_added", importer_result.id, importer_result.file.get_basename().get_file(), texture)
 
 func _find_importer(ext : String) -> IFormatImporter:
 	for importer in _Importers:
@@ -228,10 +251,10 @@ func _files_dropped(files: PoolStringArray, _screen: int) -> void:
 	_QueueLock.lock()
 	_FileQueue.append_array(newFiles)
 	_QueueLock.unlock()
-	
-	_render_and_index_thread(null)
-	
+
+#	_render_and_index_thread(null)
+
 	# Starts a new thread, but only if no one is already running.
-#	if !_Thread:
-#		_Thread = Thread.new()
-#		_Thread.start(self, "_render_and_index_thread", null)
+	if !_Thread:
+		_Thread = Thread.new()
+		_Thread.start(self, "_render_and_index_thread", null)

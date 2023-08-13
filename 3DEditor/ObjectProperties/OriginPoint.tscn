@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://Assets/OriginPoint.material" type="Material" id=1]
+[ext_resource path="res://Assets/Materials/OriginPoint.material" type="Material" id=1]
 [ext_resource path="res://3DEditor/ObjectProperties/OriginPoint.gd" type="Script" id=2]
 
 [sub_resource type="SphereMesh" id=1]

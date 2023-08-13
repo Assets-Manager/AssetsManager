@@ -16,7 +16,6 @@ onready var _HomeButton := $MarginContainer/HBoxContainer/Home
 onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
 onready var _NativeDialog := $NativeDialog
 
-var _CurrentDir : int = 0
 var _DirectoryToDelete : int = -1
 var _VisibleCards : int = 0
 
@@ -25,7 +24,7 @@ func _ready() -> void:
 		AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
 		AssetsLibrary.connect("new_asset_added", self, "_new_asset_added")
 		
-		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(_CurrentDir, "") / float(ITEMS_PER_PAGE))
+		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 
 # ---------------------------------------------
 # 			   UI import update
@@ -45,15 +44,27 @@ func _update_total_import_assets(total_files : int) -> void:
 # Updates the progressbar of the importer dialog.
 func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
 	# Only add a new card to the gui, if the max items per page isn't reached.
-	print(_Cards.get_child_count())
-	if _Cards.get_child_count() < ITEMS_PER_PAGE:
-		var tmp = _create_card()
-		_Cards.add_child(tmp)
-		tmp.id = id
-		tmp.set_texture(thumbnail)
-		tmp.set_title(name)
-	elif _VisibleCards < _Cards.get_child_count():
-		var tmp = _Cards.get_child(_VisibleCards)
+	
+	
+	if (_Cards.get_child_count() < ITEMS_PER_PAGE) || (_VisibleCards < _Cards.get_child_count()):
+		var tmp = null
+		
+		# Checks if a card needs to be updated
+		for child in _Cards.get_children():
+			if !child.visible:
+				break
+				
+			if child.id == id:
+				tmp = child
+				break
+		
+		if !tmp:
+			if _Cards.get_child_count() < ITEMS_PER_PAGE:
+				tmp = _create_card()
+				_Cards.add_child(tmp)
+			elif _VisibleCards < _Cards.get_child_count():
+				tmp = _Cards.get_child(_VisibleCards)
+			
 		tmp.set_texture(thumbnail)
 		tmp.set_title(name)
 		tmp.set_parent_folder(0)
@@ -62,7 +73,7 @@ func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
 		tmp.visible = true
 		_VisibleCards += 1
 	else:
-		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(_CurrentDir, "") / float(ITEMS_PER_PAGE))
+		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 	
 	# Updates the progressbar
 	_ImporterDialog.increment_value()
@@ -83,7 +94,7 @@ func _on_Pagination_page_update(page : int) -> void:
 		_ScrollContainer.scroll_vertical = 0
 		_ScrollContainer.scroll_horizontal = 0
 		
-		var cards := AssetsLibrary.query_assets(_CurrentDir, _Search.text, (page - 1) * ITEMS_PER_PAGE, ITEMS_PER_PAGE)
+		var cards := AssetsLibrary.query_assets(AssetsLibrary.current_directory, _Search.text, (page - 1) * ITEMS_PER_PAGE, ITEMS_PER_PAGE)
 		
 		# Hide all card, which are currently visible, since we reuse them later.
 		for child in _Cards.get_children():
@@ -106,7 +117,7 @@ func _on_Pagination_page_update(page : int) -> void:
 			
 			# Sets the parent folder id, if the user searches in the root url.
 			# So the user can open the containing folder of an asset.
-			if !_Search.text.empty() && (_CurrentDir == 0) && card.has("parent_id") && (card["parent_id"] != null):
+			if !_Search.text.empty() && (AssetsLibrary.current_directory == 0) && card.has("parent_id") && (card["parent_id"] != null):
 				tmp.set_parent_folder(card["parent_id"])
 			else:
 				tmp.set_parent_folder(0)
@@ -132,12 +143,12 @@ func _move_to_directory_pressed(id: int, is_dir : bool) -> void:
 func _card_pressed(id: int, is_dir : bool) -> void:
 	# Opens the pressed directory.
 	if is_dir:
-		_CurrentDir = id
-		_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(_CurrentDir, _Search.text) / float(ITEMS_PER_PAGE)))
+		AssetsLibrary.current_directory = id
+		_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, _Search.text) / float(ITEMS_PER_PAGE)))
 		_Pagination.current_page = 1
-		_BackButton.mouse_default_cursor_shape = Control.CURSOR_ARROW if (_CurrentDir == 0) else Control.CURSOR_POINTING_HAND
+		_BackButton.mouse_default_cursor_shape = Control.CURSOR_ARROW if (AssetsLibrary.current_directory == 0) else Control.CURSOR_POINTING_HAND
 		_HomeButton.mouse_default_cursor_shape = _BackButton.mouse_default_cursor_shape
-		_BackButton.disabled = _CurrentDir == 0
+		_BackButton.disabled = AssetsLibrary.current_directory == 0
 		_HomeButton.disabled = _BackButton.disabled
 
 # Exports an asset
@@ -170,7 +181,7 @@ func _asset_dropped(id : int, dopped_id : int, dropped_is_dir : bool) -> void:
 		moved_succefully = AssetsLibrary.move_asset(id, dopped_id)
 	
 	if moved_succefully:
-		_card_pressed(_CurrentDir, true)
+		_card_pressed(AssetsLibrary.current_directory, true)
 
 
 func _on_DirectoryMoveDialog_move_item(parent_id: int, id: int, is_dir: bool) -> void:
@@ -200,7 +211,7 @@ func _on_InputBox_name_entered(name : String) -> void:
 	if name.empty():
 		return
 	
-	var dir := AssetsLibrary.create_directory(_CurrentDir, name)
+	var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, name)
 	if dir != 0:
 		var tmp
 		
@@ -224,24 +235,27 @@ func _on_InputBox_name_entered(name : String) -> void:
 
 # Leave a subdirectory.
 func _on_Back_pressed() -> void:
-	_card_pressed(AssetsLibrary.get_parent_dir_id(_CurrentDir), true)
+	_card_pressed(AssetsLibrary.get_parent_dir_id(AssetsLibrary.current_directory), true)
 
 # Deletes a directory.
 func _on_DeleteDirDialog_confirmed() -> void:
 	if AssetsLibrary.delete_directory(_DirectoryToDelete):
 		# Go back into the root directory.
-		if _CurrentDir == _DirectoryToDelete:
+		if AssetsLibrary.current_directory == _DirectoryToDelete:
 			_card_pressed(0, true)
 		else:
-			_card_pressed(_CurrentDir, true)
+			_card_pressed(AssetsLibrary.current_directory, true)
 	else:
 		# Todo: Errorhandling
 		pass
 
 # Updates the content of the page, if the user starts typing in the search bar.
 func _on_Search_text_changed(new_text: String) -> void:
-	_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(_CurrentDir, _Search.text) / float(ITEMS_PER_PAGE)))
+	_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, _Search.text) / float(ITEMS_PER_PAGE)))
 	_Pagination.current_page = 1
 
 func _on_Home_pressed() -> void:
 	_card_pressed(0, true)
+
+func _on_OpenLibrary_pressed() -> void:
+	OS.shell_open("file://" + AssetsLibrary.get_assets_path())

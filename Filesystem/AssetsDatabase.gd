@@ -80,6 +80,14 @@ func get_assets(directory_id : int) -> Dictionary:
 		return result
 	return {}
 
+func get_asset_by_name(path : String) -> Dictionary:
+	if _DB:
+		if _DB.query_with_bindings("SELECT * from assets WHERE filename = ?", [path.get_file()]):
+			if !_DB.query_result.empty():
+				return _DB.query_result[0]
+		
+	return {}
+	
 func get_asset(asset_id : int) -> Dictionary:
 	if _DB:
 		if _DB.query_with_bindings("SELECT * from assets WHERE id = ?", [asset_id]):
@@ -181,11 +189,17 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 		return result
 	return []
 
+func update_asset(id : int, path: String, thumbnailName, type) -> bool:
+	if _DB:
+		var file : File = File.new()
+		var modified : int = file.get_modified_time(path)
+		return _DB.update_rows("assets", "id=" + str(id), {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName})
+	return false
+
 func add_asset(path: String, thumbnailName, type) -> int:
 	if _DB:
 		var file : File = File.new()
 		var modified : int = file.get_modified_time(path)
-		
 		if _DB.insert_row("assets", {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName}):
 			return _DB.db.last_insert_rowid
 	return -1
