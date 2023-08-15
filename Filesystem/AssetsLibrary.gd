@@ -1,9 +1,11 @@
 extends Node
 
 const IMPORTERS_PATH = "res://FormatImporters/"
+const BROKEN_IMAGE = preload("res://Assets/Material Icons/hide_image.svg")
 
 signal new_asset_added(id, name, thumbnail)
 signal update_total_import_assets(count)
+signal increase_import_counter()
 
 var _AssetsPath : String = ""
 var _QueueLock : Mutex = Mutex.new()
@@ -86,6 +88,30 @@ func open(path : String) -> bool:
 # Returns a list of all directories. Ordered by the parents.
 func get_all_directories() -> Array:
 	return AssetsDatabase.get_all_directories()
+	
+# Tries to load the thumbnail of an asset.
+# If there is no thumbnail or the image couldn't be loaded, a placeholder one is returned.
+func _load_thumbnail(asset : Dictionary) -> Texture:
+	if asset.has("thumbnail"):
+		if !(asset["thumbnail"] is Texture):
+			var thumbnailpath = ""
+			if asset["thumbnail"]:
+				thumbnailpath = get_thumbnail_path() + "/" + asset["thumbnail"]
+			else:	# For images, because they are already images.
+				thumbnailpath = build_assets_path(asset["name"].get_file())
+			
+			var texture : Texture = null
+			if _Directory.file_exists(thumbnailpath):
+				var img := Image.new()
+				if img.load(thumbnailpath) == OK:
+					texture = ImageTexture.new()
+					texture.create_from_image(img, 0)
+			
+			if texture:
+				return texture
+		else:
+			return asset["thumbnail"]
+	return BROKEN_IMAGE
 
 # ---------------------------------------------
 # 					Export
@@ -154,22 +180,10 @@ func get_parent_dir_id(directoryId: int) -> int:
 	
 func query_assets(directoryId : int, search: String, skip: int, count: int) -> Array:
 	var results := AssetsDatabase.query_assets(directoryId, search, skip, count)
-	
 	for result in results:
 		if result.has("thumbnail"):
-			var thumbnailpath = ""
-			if result["thumbnail"]:
-				thumbnailpath = get_thumbnail_path() + "/" + result["thumbnail"]
-			else:	# For images, because they are already images.
-				thumbnailpath = build_assets_path(result["name"])
-				
-			var img := Image.new()
-			img.load(thumbnailpath)
-			
-			var texture := ImageTexture.new()
-			texture.create_from_image(img, 0)
-			result["thumbnail"] = texture
-			result["name"] = result["name"].get_basename().get_file()
+			result["thumbnail"] = _load_thumbnail(result)
+		result["name"] = result["name"].get_basename().get_file()
 	
 	return results
 	
@@ -218,27 +232,64 @@ func _render_and_index_thread(_unused : Object) -> void:
 						texture.create_from_image(img, 0)
 					
 					# Link the asset with the currently opened directory
-					if current_directory != 0:
-						move_asset(current_directory, importer_result.id)
+					if (current_directory != 0) || file_info.has("parent_id"):
+						if file_info.has("parent_id"):
+							move_asset(file_info.parent_id, importer_result.id)
+						else:
+							move_asset(current_directory, importer_result.id)
 					
-					emit_signal("new_asset_added", importer_result.id, importer_result.file.get_basename().get_file(), texture)
-
+					emit_signal("new_asset_added", importer_result.id, importer_result.name.get_basename().get_file(), texture)
+			else:	# Updates the ui, even if no file was imported.
+				emit_signal("increase_import_counter")
+				
 func _find_importer(ext : String) -> IFormatImporter:
 	for importer in _Importers:
 		if _Importers[importer].get_extensions().find(ext) != -1:
 			return _Importers[importer]
 	return null
 
-# Newly dropped files
-func _files_dropped(files: PoolStringArray, _screen: int) -> void:
-	var newFiles = []
-	var f : File = File.new()
+func _build_import_file_list(files: PoolStringArray) -> Array:
+	var newFiles : Array = []
+	var directories : Array = []
 	for file in files:
-		if f.file_exists(file):
+		if _Directory.file_exists(file):
 			var importer : IFormatImporter = _find_importer(file.get_extension().to_lower())
 			if importer:
 				newFiles.append({"file": file, "importer": importer})
+		elif _Directory.dir_exists(file):
+			directories.append(file)
 	
+	var parent_dir_id : int = current_directory
+	while !directories.empty():
+		var dir : String = directories.pop_back()
+		
+		# Check if the directory already exists.
+		var id : int = AssetsDatabase.get_directory_id(parent_dir_id, dir.get_file())
+		if id == 0:
+			parent_dir_id = AssetsDatabase.create_directory(parent_dir_id, dir.get_file())
+		else:
+			parent_dir_id = id
+		
+		var directory : Directory = Directory.new()
+		if directory.open(dir) == OK:
+			directory.list_dir_begin()
+			var file_name = directory.get_next()
+			while file_name != "":
+				if (file_name != ".") && (file_name != ".."):
+					if !directory.current_is_dir():
+						var importer : IFormatImporter = _find_importer(file_name.get_extension().to_lower())
+						if importer:
+							newFiles.append({"file": dir + "/" + file_name, "importer": importer, "parent_id": parent_dir_id})
+					else:
+						directories.append(dir + "/" + file_name)
+				file_name = directory.get_next()
+
+	return newFiles
+
+# Newly dropped files
+func _files_dropped(files: PoolStringArray, _screen: int) -> void:
+	var newFiles : Array = _build_import_file_list(files)
+		
 	# No supported files found.
 	if newFiles.empty():
 		return

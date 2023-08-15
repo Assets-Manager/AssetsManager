@@ -102,6 +102,20 @@ func create_directory(parentId : int, name : String) -> int:
 			return _DB.db.last_insert_rowid
 			
 	return 0
+	
+func get_directory_id(parentId : int, name : String) -> int:
+	if _DB:
+		var bindings : Array = [name]
+		var query = "parent_id IS NULL"
+		if parentId != 0:
+			query = "parent_id = ?"
+			bindings.push_front(parentId)
+		
+		if _DB.query_with_bindings("SELECT id FROM directories WHERE %s AND name = ?", bindings):
+			if !_DB.query_result.empty():
+				return _DB.query_result[0].id
+			
+	return 0
 
 # Returns the total numbers of assets for a given search in a directory.
 func get_assets_count(directoryId : int, search : String) -> int:

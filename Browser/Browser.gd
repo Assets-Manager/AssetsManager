@@ -22,7 +22,8 @@ var _VisibleCards : int = 0
 func _ready() -> void:
 	if AssetsLibrary.open("c:/AssetsTest"):
 		AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
-		AssetsLibrary.connect("new_asset_added", self, "_new_asset_added")
+		AssetsLibrary.connect("new_asset_added", self, "_new_asset_added", [], CONNECT_DEFERRED)
+		AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
 		
 		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 
@@ -36,16 +37,14 @@ func _update_total_import_assets(total_files : int) -> void:
 	_ImporterDialog.set_total_files(total_files)
 	
 	# Shows the dialog and resets the progress, if the dialog is not already visisble.
-	if _ImporterDialog.visible:
+	if !_ImporterDialog.visible:
 		_ImporterDialog.set_value(0)
-		_ImporterDialog.visible = true
+		_ImporterDialog.popup_centered()
 
 # Called if a new assets were successfully imported
 # Updates the progressbar of the importer dialog.
 func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
 	# Only add a new card to the gui, if the max items per page isn't reached.
-	
-	
 	if (_Cards.get_child_count() < ITEMS_PER_PAGE) || (_VisibleCards < _Cards.get_child_count()):
 		var tmp = null
 		
@@ -75,7 +74,10 @@ func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
 	else:
 		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 	
-	# Updates the progressbar
+	_increase_import_counter()
+
+# Updates the progressbar
+func _increase_import_counter() -> void:
 	_ImporterDialog.increment_value()
 	
 	# If all files are imported, the dialog will be closed.
@@ -250,7 +252,7 @@ func _on_DeleteDirDialog_confirmed() -> void:
 		pass
 
 # Updates the content of the page, if the user starts typing in the search bar.
-func _on_Search_text_changed(new_text: String) -> void:
+func _on_Search_text_changed(_new_text: String) -> void:
 	_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, _Search.text) / float(ITEMS_PER_PAGE)))
 	_Pagination.current_page = 1
 

@@ -47,7 +47,7 @@ func _on_Card_mouse_exited() -> void:
 		else:
 			_Animation.play("RESET")
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if rect_scale != Vector2.ONE:
 		_on_Card_mouse_exited()
 
@@ -59,13 +59,13 @@ func _on_Card_gui_input(event: InputEvent) -> void:
 func _on_Delete_pressed() -> void:
 	emit_signal("delete_card", id, is_dir)
 
-func can_drop_data(position: Vector2, data) -> bool:
+func can_drop_data(_position: Vector2, data) -> bool:
 	return is_dir && (data != self)
 
-func drop_data(position: Vector2, data) -> void:
+func drop_data(_position: Vector2, data) -> void:
 	emit_signal("asset_dropped", id, data.id, data.is_dir)
 
-func get_drag_data(position: Vector2):
+func get_drag_data(_position: Vector2):
 	var card : Control = self.duplicate()
 	card.modulate.a = 0.5
 	set_drag_preview(card)
