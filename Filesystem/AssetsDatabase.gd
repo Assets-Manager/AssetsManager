@@ -111,7 +111,7 @@ func get_directory_id(parentId : int, name : String) -> int:
 			query = "parent_id = ?"
 			bindings.push_front(parentId)
 		
-		if _DB.query_with_bindings("SELECT id FROM directories WHERE %s AND name = ?", bindings):
+		if _DB.query_with_bindings("SELECT id FROM directories WHERE %s AND name = ?" % query, bindings):
 			if !_DB.query_result.empty():
 				return _DB.query_result[0].id
 			

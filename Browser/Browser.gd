@@ -20,12 +20,11 @@ var _DirectoryToDelete : int = -1
 var _VisibleCards : int = 0
 
 func _ready() -> void:
-	if AssetsLibrary.open("c:/AssetsTest"):
-		AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
-		AssetsLibrary.connect("new_asset_added", self, "_new_asset_added", [], CONNECT_DEFERRED)
-		AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
-		
-		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
+	AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
+	AssetsLibrary.connect("new_asset_added", self, "_new_asset_added", [], CONNECT_DEFERRED)
+	AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
+	
+	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 
 # ---------------------------------------------
 # 			   UI import update

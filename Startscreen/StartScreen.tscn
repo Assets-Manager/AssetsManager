@@ -1,0 +1,89 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Assets/Theme/noto-sans-bold.tres" type="DynamicFont" id=1]
+[ext_resource path="res://Native/NativeFileDialog.gdns" type="Script" id=2]
+[ext_resource path="res://Startscreen/StartScreen.gd" type="Script" id=3]
+[ext_resource path="res://Startscreen/AcceptDialog.gd" type="Script" id=4]
+
+[sub_resource type="StyleBoxEmpty" id=2]
+
+[node name="StartScreen" type="CenterContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 3 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+margin_left = 443.0
+margin_top = 159.0
+margin_right = 580.0
+margin_bottom = 441.0
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+margin_right = 137.0
+margin_bottom = 42.0
+custom_fonts/font = ExtResource( 1 )
+text = "Welcome"
+
+[node name="Control2" type="Control" parent="VBoxContainer"]
+margin_top = 46.0
+margin_right = 137.0
+margin_bottom = 56.0
+rect_min_size = Vector2( 0, 10 )
+
+[node name="Label2" type="Label" parent="VBoxContainer"]
+margin_top = 60.0
+margin_right = 137.0
+margin_bottom = 83.0
+text = "Start"
+
+[node name="NewProject" type="LinkButton" parent="VBoxContainer"]
+margin_top = 87.0
+margin_right = 137.0
+margin_bottom = 110.0
+custom_colors/font_color = Color( 0.431373, 0.615686, 1, 1 )
+text = "New library"
+
+[node name="OpenProject" type="LinkButton" parent="VBoxContainer"]
+margin_top = 114.0
+margin_right = 137.0
+margin_bottom = 137.0
+focus_mode = 2
+custom_colors/font_color = Color( 0.431373, 0.615686, 1, 1 )
+text = "Open library"
+
+[node name="Control" type="Control" parent="VBoxContainer"]
+margin_top = 141.0
+margin_right = 137.0
+margin_bottom = 151.0
+rect_min_size = Vector2( 0, 10 )
+
+[node name="Label3" type="Label" parent="VBoxContainer"]
+margin_top = 155.0
+margin_right = 137.0
+margin_bottom = 178.0
+text = "Recent"
+
+[node name="Recent" type="ItemList" parent="VBoxContainer"]
+margin_top = 182.0
+margin_right = 137.0
+margin_bottom = 282.0
+rect_min_size = Vector2( 0, 100 )
+custom_styles/bg = SubResource( 2 )
+allow_reselect = true
+
+[node name="NativeDialogs" type="Node" parent="."]
+script = ExtResource( 2 )
+title = "Select library folder"
+dialog_type = 2
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="InfoDialog" type="AcceptDialog" parent="CanvasLayer"]
+margin_right = 88.0
+margin_bottom = 80.0
+window_title = ""
+script = ExtResource( 4 )
+
+[connection signal="pressed" from="VBoxContainer/NewProject" to="." method="_on_NewProject_pressed"]
+[connection signal="pressed" from="VBoxContainer/OpenProject" to="." method="_on_OpenProject_pressed"]
+[connection signal="item_selected" from="VBoxContainer/Recent" to="." method="_on_Recent_item_selected"]

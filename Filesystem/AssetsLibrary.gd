@@ -80,6 +80,7 @@ func open(path : String) -> bool:
 			
 		_load_importers()
 		
+		ProgramManager.settings.last_opened = _AssetsPath
 		get_tree().connect("files_dropped", self, "_files_dropped")
 		return true
 		
