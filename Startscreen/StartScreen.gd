@@ -1,6 +1,6 @@
 extends CenterContainer
 
-onready var _Recent := $VBoxContainer/Recent
+onready var _Recent := $VBoxContainer/ScrollContainer/Recent
 onready var _NativeDialogs := $NativeDialogs
 onready var _InfoDialog := $CanvasLayer/InfoDialog
 
@@ -13,8 +13,12 @@ func _ready():
 	
 	# Loads the recent libraries list
 	for recent in ProgramManager.settings.recent_asset_libraries:
-		_Recent.add_item(recent.get_file())
-		_Recent.set_item_tooltip(_Recent.get_item_count() - 1, recent)
+		var tmp := LinkButton.new()
+		tmp.text = recent.get_file()
+		tmp.hint_tooltip = recent
+		tmp.add_color_override("font_color", Color("#6e9dff"))
+		tmp.connect("pressed", self, "_open_recent", [recent])
+		_Recent.add_child(tmp)
 
 func _on_NewProject_pressed():
 	var path : PoolStringArray = _NativeDialogs.show_modal()
@@ -56,6 +60,6 @@ func _check_dir_is_empty(path : String) -> bool:
 		
 	return true
 
-func _on_Recent_item_selected(index):
+func _open_recent(path: String):
 	var file : File = File.new()
-	_try_open_library(_Recent.get_item_tooltip(index), !file.file_exists(_Recent.get_item_tooltip(index) + "/assets.db"), "Not a valid asset library!")
+	_try_open_library(path, !file.file_exists(path + "/assets.db"), "Not a valid asset library!")

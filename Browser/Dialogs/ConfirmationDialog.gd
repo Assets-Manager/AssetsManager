@@ -1,6 +1,7 @@
 extends ConfirmationDialog
 
 func _ready() -> void:
+	get_close_button().hide()
 	get_viewport().connect("size_changed", self, "_size_changed")
 	get_ok().text = tr("Yes")
 	get_cancel().text = tr("No")

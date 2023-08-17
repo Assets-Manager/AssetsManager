@@ -65,6 +65,9 @@ func build_assets_path(subpath : String) -> String:
 func get_thumbnail_path() -> String:
 	return _AssetsPath + "/thumbnails"
 	
+func get_directory_id(parentId : int, name : String) -> int:
+	return AssetsDatabase.get_directory_id(parentId, name)
+	
 # Opens a given assets library
 # Returns true on success
 func open(path : String) -> bool:
@@ -85,6 +88,9 @@ func open(path : String) -> bool:
 		return true
 		
 	return false
+
+func close() -> void:
+	AssetsDatabase.close()
 
 # Returns a list of all directories. Ordered by the parents.
 func get_all_directories() -> Array:
@@ -197,6 +203,7 @@ func get_assets_count(directoryId : int, search : String) -> int:
 
 func _process(_delta: float) -> void:
 	if _Thread && !_Thread.is_alive():
+		_TotalFilecount = 0
 		_Thread.wait_to_finish()
 		_Thread = null
 
@@ -206,6 +213,7 @@ func _render_and_index_thread(_unused : Object) -> void:
 	while !_QuitThread:
 		_QueueLock.lock()
 		if _FileQueue.empty():
+			_QueueLock.unlock()
 			break
 		
 		var file_info : Dictionary = _FileQueue.pop_front()

@@ -5,6 +5,7 @@ signal name_entered(name)
 onready var _Text := $CenterContainer/VBoxContainer/LineEdit
 
 func _ready() -> void:
+	get_close_button().hide()
 	get_viewport().connect("size_changed", self, "_size_changed")
 	
 func _size_changed() -> void:

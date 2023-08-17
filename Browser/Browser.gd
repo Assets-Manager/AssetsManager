@@ -7,7 +7,7 @@ const ITEMS_PER_PAGE : int = 100
 onready var _Cards := $ScrollContainer/CenterContainer/Cards
 onready var _ImporterDialog := $CanvasLayer/ImporterDialog
 onready var _DirectoryMoveDialog := $CanvasLayer/DirectoryMoveDialog
-onready var _Pagination := $MarginContainer2/Pagination
+onready var _Pagination := $MarginContainer2/HBoxContainer/Pagination
 onready var _Search := $MarginContainer/HBoxContainer/Search
 onready var _InputBox := $CanvasLayer/InputBox
 onready var _ScrollContainer := $ScrollContainer
@@ -15,6 +15,7 @@ onready var _BackButton := $MarginContainer/HBoxContainer/Back
 onready var _HomeButton := $MarginContainer/HBoxContainer/Home
 onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
 onready var _NativeDialog := $NativeDialog
+onready var _InfoDialog := $CanvasLayer/InfoDialog
 
 var _DirectoryToDelete : int = -1
 var _VisibleCards : int = 0
@@ -211,28 +212,32 @@ func _on_CreateDir_pressed() -> void:
 func _on_InputBox_name_entered(name : String) -> void:
 	if name.empty():
 		return
-	
-	var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, name)
-	if dir != 0:
-		var tmp
 		
-		# Checks if we can resuse a card or a new one needs to be created.
-		if (_Cards.get_child_count() == 0) || (_Cards.get_child_count() < ITEMS_PER_PAGE):
-			tmp = _create_card()
-			_Cards.add_child(tmp)
+	if AssetsLibrary.get_directory_id(AssetsLibrary.current_directory, name) == 0:
+		var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, name)
+		if dir != 0:
+			var tmp
+			
+			# Checks if we can resuse a card or a new one needs to be created.
+			if (_Cards.get_child_count() == 0) || (_Cards.get_child_count() < ITEMS_PER_PAGE):
+				tmp = _create_card()
+				_Cards.add_child(tmp)
+			else:
+				tmp = _Cards.get_children()[_Cards.get_child_count() - 1]
+			
+			# A new directory will be move to the first place in the container.
+			_Cards.move_child(tmp, 0)
+			tmp.set_texture(FOLDER_ICON)
+			tmp.set_title(name)
+			tmp.id = dir
+			tmp.is_dir = true
+			tmp.visible = true
 		else:
-			tmp = _Cards.get_children()[_Cards.get_child_count() - 1]
-		
-		# A new directory will be move to the first place in the container.
-		_Cards.move_child(tmp, 0)
-		tmp.set_texture(FOLDER_ICON)
-		tmp.set_title(name)
-		tmp.id = dir
-		tmp.is_dir = true
-		tmp.visible = true
+			# TODO: Errorhandling
+			pass
 	else:
-		# TODO: Errorhandling
-		pass
+		_InfoDialog.dialog_text = tr("Directory '%s' already exists in the current directory!") % name
+		_InfoDialog.popup_centered()
 
 # Leave a subdirectory.
 func _on_Back_pressed() -> void:
@@ -260,3 +265,8 @@ func _on_Home_pressed() -> void:
 
 func _on_OpenLibrary_pressed() -> void:
 	OS.shell_open("file://" + AssetsLibrary.get_assets_path())
+
+func _on_CloseLib_pressed() -> void:
+	ProgramManager.settings.last_opened = ""
+	AssetsLibrary.close()
+	get_tree().change_scene("res://Startscreen/StartScreen.tscn")
