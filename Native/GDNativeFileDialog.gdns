@@ -5,6 +5,6 @@ entry/Windows.64 = "res://Native/libgdassimp.dll"
 dependency/Windows.64 = [  ]
 
 [resource]
-class_name = "NativeFileDialog"
+class_name = "GDNativeFileDialog"
 library = SubResource( 1 )
-script_class_name = "NativeFileDialog"
+script_class_name = "GDNativeFileDialog"

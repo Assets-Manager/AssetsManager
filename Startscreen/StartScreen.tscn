@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://Assets/Theme/noto-sans-bold.tres" type="DynamicFont" id=1]
-[ext_resource path="res://Native/NativeFileDialog.gdns" type="Script" id=2]
+[ext_resource path="res://Native/GDNativeFileDialog.gdns" type="Script" id=2]
 [ext_resource path="res://Startscreen/StartScreen.gd" type="Script" id=3]
 [ext_resource path="res://Startscreen/AcceptDialog.gd" type="Script" id=4]
 

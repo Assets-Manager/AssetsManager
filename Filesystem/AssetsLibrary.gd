@@ -17,6 +17,14 @@ var _Directory : Directory = Directory.new()
 var _Importers : Dictionary = {}
 
 var current_directory : int = 0
+onready var _DirWatcher : DirectoryWatcher = DirectoryWatcher.new()
+
+func _ready() -> void:
+	add_child(_DirWatcher)
+	_DirWatcher.connect("new_asset", self, "_add_or_update_asset")
+	_DirWatcher.connect("changed_asset", self, "_add_or_update_asset")
+	_DirWatcher.connect("deleted_asset", self, "_deleted_asset")
+	_DirWatcher.connect("renamed_asset", self, "_renamed_asset")
 
 # Joins the running thread.
 func _exit_tree() -> void:
@@ -31,8 +39,10 @@ func _exit_tree() -> void:
 func _load_importers() -> void:
 	_Importers.clear()
 	for child in get_children():
-		child.queue_free()
+		if !(child is DirectoryWatcher):
+			child.queue_free()
 	
+	var supported_extensions : Array
 	var dir := Directory.new()
 	if dir.open(IMPORTERS_PATH) == OK:
 		dir.list_dir_begin()
@@ -44,11 +54,13 @@ func _load_importers() -> void:
 					var id : int = AssetsDatabase.get_or_add_asset_type(script.get_type())
 					if id != -1:
 						var importer : IFormatImporter = script.new()
+						supported_extensions.append_array(importer.get_extensions())
 						importer.register(self, id)
 						_Importers[script.get_type()] = importer
 						
 			file_name = dir.get_next()
-		
+			
+	_DirWatcher.supported_extensions = supported_extensions
 # ---------------------------------------------
 # 					Helpers
 # ---------------------------------------------
@@ -82,6 +94,7 @@ func open(path : String) -> bool:
 			_Directory.make_dir(get_thumbnail_path())
 			
 		_load_importers()
+		_DirWatcher.open(_AssetsPath.replace("\\", "/"))
 		
 		ProgramManager.settings.last_opened = _AssetsPath
 		get_tree().connect("files_dropped", self, "_files_dropped")
@@ -159,7 +172,20 @@ func create_directory(parentId : int, name : String) -> int:
 	return AssetsDatabase.create_directory(parentId, name)
 	
 func update_asset(id : int, path: String, thumbnailName, type) -> bool:
+	var asset := AssetsDatabase.get_asset(id)
+	if asset.thumbnail: # Delete the old thumbnail
+		_Directory.remove(get_thumbnail_path() + "/" + asset.thumbnail)
+	
 	return AssetsDatabase.update_asset(id, path, thumbnailName, type)
+	
+func _add_or_update_asset(path : String) -> void:
+	_files_dropped([path], 0)
+	
+func _deleted_asset(path : String) -> void:
+	print("DELETE: " + path)
+	
+func _renamed_asset(old_path : String, new_path : String) -> void:
+	print("RENAMED: " + old_path + " to " + new_path)
 	
 # ---------------------------------------------
 # 					Move
