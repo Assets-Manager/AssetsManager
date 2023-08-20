@@ -103,12 +103,14 @@ func get_asset_by_name(path : String) -> Dictionary:
 	return result
 	
 func get_asset(asset_id : int) -> Dictionary:
+	var result : Dictionary = {}
 	if _DB:
+		_Lock.lock()
 		if _DB.query_with_bindings("SELECT * from assets WHERE id = ?", [asset_id]):
 			if !_DB.query_result.empty():
-				return _DB.query_result[0]
-		
-	return {}
+				result = _DB.query_result[0]
+		_Lock.unlock()
+	return result
 
 func create_directory(parentId : int, name : String) -> int:
 	var result : int = 0
