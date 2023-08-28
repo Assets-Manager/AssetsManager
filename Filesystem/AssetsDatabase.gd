@@ -15,34 +15,27 @@ func open(path : String) -> bool:
 		return _migrate()	# Starts a migration of the database
 		
 	return false
-	
+
+# Closes the database
 func close() -> void:
 	_DB.close_db()
 
+# ---------------------------------------------
+# 					Queries
+# ---------------------------------------------
+
+# Gets a list of all directories, ordered by parent.
 func get_all_directories() -> Array:
+	var result : Array = []
 	if _DB:
+		_Lock.lock()
 		if _DB.query("SELECT * FROM directories ORDER BY parent_id"):
-			return _DB.query_result
+			result = _DB.query_result
+		_Lock.unlock()
 		
-	return []
+	return result
 
-func move_directory(parent_id : int, child_id : int) -> bool:
-	if _DB:
-		if _DB.query_with_bindings("SELECT name FROM directories WHERE id = ?", [child_id]):
-			if !_DB.query_result_by_reference.empty():
-				if _DB.query_with_bindings("SELECT id FROM directories WHERE parent_id = ? AND name = ?", [parent_id, _DB.query_result_by_reference[0].name]):
-					if _DB.query_result_by_reference.empty():
-						return _DB.update_rows("directories", "id=" + str(child_id), {"parent_id": null if parent_id == 0 else parent_id})
-	return false
-	
-func move_asset(parent_id : int, asset_id : int) -> bool:
-	if _DB:
-		if _DB.delete_rows("asset_directory_rel", "ref_assets_id=" + str(asset_id)):
-			if parent_id != 0:
-				return _DB.insert_row("asset_directory_rel", {'ref_assets_id': asset_id, "ref_directory_id": parent_id})
-			return true
-	return false
-
+# Gets the parent of a directory
 func get_parent_dir_id(directoryId: int) -> int:
 	if _DB:
 		_Lock.lock()
@@ -53,43 +46,30 @@ func get_parent_dir_id(directoryId: int) -> int:
 		
 	return 0
 
-func delete_directory(directoryId: int) -> bool:
-	if _DB:
-		return _DB.delete_rows("directories", "id=" + str(directoryId))
-		
-	return false
-
+# Gets the name of a directory.
 func get_dir_name(directory_id : int) -> String:
+	var result : String = ""
 	if _DB:
+		_Lock.lock()
 		if _DB.query_with_bindings("SELECT name FROM directories WHERE id = ?", [directory_id]):
 			if !_DB.query_result.empty():
-				return _DB.query_result[0].name
+				result = _DB.query_result[0].name
+		_Lock.unlock()
 		
-	return ""
+	return result
 
-func get_or_add_asset_type(name : String) -> int:
-	if _DB:
-		if _DB.query_with_bindings("SELECT id FROM asset_types WHERE name = ?", [name]):
-			if !_DB.query_result.empty():
-				return _DB.query_result[0].id
-			else:
-				if _DB.insert_row("asset_types", {"name": name}):
-					return _DB.db.last_insert_rowid
-		
-	return -1
-
+# Gets all assets and diretories of a directory.
 func get_assets(directory_id : int) -> Dictionary:
+	var result : Dictionary = {}
 	if _DB:
-		var result : Dictionary = {}
 		_Lock.lock()
 		if _DB.query_with_bindings("SELECT id, name FROM directories WHERE parent_id = ?", [directory_id]):
 			result["subdirectories"] = _DB.query_result
 		
 		if _DB.query_with_bindings("SELECT a.id, a.filename as name, a.thumbnail FROM assets as a LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?) WHERE a.id = b.ref_assets_id", [directory_id]):
 			result["assets"] = _DB.query_result
-		_Lock.unlock()	
-		return result
-	return {}
+		_Lock.unlock()
+	return result
 
 func get_asset_by_name(path : String) -> Dictionary:
 	var result : Dictionary = {}
@@ -112,16 +92,6 @@ func get_asset(asset_id : int) -> Dictionary:
 		_Lock.unlock()
 	return result
 
-func create_directory(parentId : int, name : String) -> int:
-	var result : int = 0
-	if _DB:
-		_Lock.lock()
-		if _DB.insert_row("directories", {"name": name, "parent_id": null if parentId == 0 else parentId}):
-			result = _DB.db.last_insert_rowid
-		_Lock.unlock()
-			
-	return result
-	
 func get_directory_id(parentId : int, name : String) -> int:
 	var result : int = 0
 	if _DB:
@@ -222,15 +192,86 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 		return result
 	return []
 
+# ---------------------------------------------
+# 					Move
+# ---------------------------------------------
+
+# Moves a diretory to a another one.
+func move_directory(parent_id : int, child_id : int) -> bool:
+	var result : bool = false
+	if _DB:
+		_Lock.lock()
+		if _DB.query_with_bindings("SELECT name FROM directories WHERE id = ?", [child_id]):
+			if !_DB.query_result_by_reference.empty():
+				if _DB.query_with_bindings("SELECT id FROM directories WHERE parent_id = ? AND name = ?", [parent_id, _DB.query_result_by_reference[0].name]):
+					if _DB.query_result_by_reference.empty():
+						result = _DB.update_rows("directories", "id=" + str(child_id), {"parent_id": null if parent_id == 0 else parent_id})
+		_Lock.unlock()
+	return result
+
+# Moves an asset to a another directory.
+func move_asset(parent_id : int, asset_id : int) -> bool:
+	var result : bool = false
+	if _DB:
+		_Lock.lock()
+		if _DB.delete_rows("asset_directory_rel", "ref_assets_id=" + str(asset_id)):
+			if parent_id != 0:
+				result = _DB.insert_row("asset_directory_rel", {'ref_assets_id': asset_id, "ref_directory_id": parent_id})
+			result = true
+		_Lock.unlock()
+	return result
+
+# ---------------------------------------------
+# 					Delete
+# ---------------------------------------------
+
+# Delete a diretory
+func delete_directory(directoryId: int) -> bool:
+	var result : bool = false
+	if _DB:
+		_Lock.lock()
+		result = _DB.delete_rows("directories", "id=" + str(directoryId))
+		_Lock.unlock()
+		
+	return result
+
+# ---------------------------------------------
+# 					Update
+# ---------------------------------------------
+
+func get_or_add_asset_type(name : String) -> int:
+	var id : int = 0
+	if _DB:
+		_Lock.unlock()
+		if _DB.query_with_bindings("SELECT id FROM asset_types WHERE name = ?", [name]):
+			if !_DB.query_result.empty():
+				id = _DB.query_result[0].id
+			else:
+				if _DB.insert_row("asset_types", {"name": name}):
+					id = _DB.db.last_insert_rowid
+		_Lock.unlock()
+		
+	return id
+
+func create_directory(parentId : int, name : String) -> int:
+	var result : int = 0
+	if _DB:
+		_Lock.lock()
+		if _DB.insert_row("directories", {"name": name, "parent_id": null if parentId == 0 else parentId}):
+			result = _DB.db.last_insert_rowid
+		_Lock.unlock()
+			
+	return result
+
 func update_asset(id : int, path: String, thumbnailName, type) -> bool:
+	var result : bool = false
 	if _DB:
 		var file : File = File.new()
 		var modified : int = file.get_modified_time(path)
 		_Lock.lock()
-		var ret : bool = _DB.update_rows("assets", "id=" + str(id), {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName})
+		result = _DB.update_rows("assets", "id=" + str(id), {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName})
 		_Lock.unlock()
-		return ret
-	return false
+	return result
 
 func add_asset(path: String, thumbnailName, type) -> int:
 	var result : int = 0
@@ -242,6 +283,10 @@ func add_asset(path: String, thumbnailName, type) -> int:
 			result = _DB.db.last_insert_rowid
 		_Lock.unlock()
 	return result
+
+# ---------------------------------------------
+# 				  Migration
+# ---------------------------------------------
 
 func _migrate() -> bool:
 	var ret = false

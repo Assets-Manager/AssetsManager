@@ -3,8 +3,12 @@ extends CenterContainer
 onready var _Recent := $VBoxContainer/ScrollContainer/Recent
 onready var _NativeDialogs := $NativeDialogs
 onready var _InfoDialog := $CanvasLayer/InfoDialog
+onready var _DisclaimerDialog := $CanvasLayer/DisclaimerDialog
 
 func _ready():
+	if !ProgramManager.settings.disclaimer_accepted:
+		_DisclaimerDialog.popup_centered()
+	
 	# Reopens the last loaded library.
 	if !ProgramManager.settings.last_opened.empty():
 		if AssetsLibrary.open(ProgramManager.settings.last_opened):

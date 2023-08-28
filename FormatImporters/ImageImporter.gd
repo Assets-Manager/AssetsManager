@@ -20,7 +20,7 @@ static func get_extensions() -> Array:
 func _render_thumbnail(path: String) -> Texture:
 	var img : Image = Image.new()
 	var result : ImageTexture = null
-	if img.load(path):
+	if img.load(path) == OK:
 		# Any image which is larger than the thumbnail size, will be scaled down.
 		if (img.get_width() > 128) || (img.get_height() > 128):
 			var aspect : float = float(img.get_width()) / float(img.get_height())

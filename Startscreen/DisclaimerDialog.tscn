@@ -1,0 +1,60 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Assets/Theme/noto-sans-bold.tres" type="DynamicFont" id=1]
+[ext_resource path="res://Startscreen/DisclaimerDialog.gd" type="Script" id=2]
+
+[node name="DisclaimerDialog" type="WindowDialog"]
+visible = true
+margin_right = 573.0
+margin_bottom = 468.0
+script = ExtResource( 2 )
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 563.0
+margin_bottom = 458.0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer"]
+margin_right = 553.0
+margin_bottom = 411.0
+size_flags_vertical = 3
+custom_fonts/bold_font = ExtResource( 1 )
+bbcode_enabled = true
+bbcode_text = "[b]Disclaimer[/b]
+
+1. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+
+2. Always keep a backup copy of your original files. No software is perfect, not even this one."
+text = "Disclaimer
+
+1. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+
+2. Always keep a backup copy of your original files. No software is perfect, not even this one."
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+margin_top = 415.0
+margin_right = 553.0
+margin_bottom = 448.0
+
+[node name="Accept" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+margin_right = 61.0
+margin_bottom = 33.0
+text = "Accept"
+
+[node name="Deny" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+margin_left = 65.0
+margin_right = 114.0
+margin_bottom = 33.0
+text = "Deny"
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Accept" to="." method="_on_Accept_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Deny" to="." method="_on_Deny_pressed"]

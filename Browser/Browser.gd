@@ -79,6 +79,7 @@ func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
 # Updates the progressbar
 func _increase_import_counter() -> void:
 	_ImporterDialog.increment_value()
+	_on_Pagination_page_update(_Pagination.current_page)
 	
 	# If all files are imported, the dialog will be closed.
 	if _ImporterDialog.get_value() == _ImporterDialog.get_total_files():
