@@ -2,6 +2,12 @@
 .godot/
 addons/godot-sqlite/*
 *.dll
+*.so
+*.tar*
+*.zip
+*.exe
+*.x86_64
+*.pck
 
 # Godot-specific ignores
 .import/

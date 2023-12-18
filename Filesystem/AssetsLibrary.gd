@@ -48,8 +48,8 @@ func _load_importers() -> void:
 		dir.list_dir_begin()
 		var file_name = dir.get_next()
 		while file_name != "":
-			if !dir.current_is_dir():
-				var script = load(IMPORTERS_PATH + file_name)
+			if !dir.current_is_dir() && !("IFormat" in file_name):
+				var script = load(IMPORTERS_PATH + file_name.trim_suffix('.remap'))
 				if !script.get_type().empty():
 					var id : int = AssetsDatabase.get_or_add_asset_type(script.get_type())
 					if id != 0:
