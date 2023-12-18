@@ -1,10 +1,8 @@
 [gd_resource type="NativeScript" load_steps=2 format=2]
 
-[sub_resource type="GDNativeLibrary" id=1]
-entry/Windows.64 = "res://Native/libgdassimp.dll"
-dependency/Windows.64 = [  ]
+[ext_resource path="res://Native/libgdassetsmanager.tres" type="GDNativeLibrary" id=1]
 
 [resource]
 class_name = "GDNativeFileDialog"
-library = SubResource( 1 )
+library = ExtResource( 1 )
 script_class_name = "GDNativeFileDialog"
