@@ -5,6 +5,8 @@ const SETTINGS_DIR : String = "user://config"
 var settings : Settings
 
 func _ready() -> void:
+	OS.set_window_title(ProjectSettings.get_setting("application/config/name") + " - " + ProjectSettings.get_setting("application/config/version"))
+	
 	_load_settings()
 	
 func _load_settings() -> void:
