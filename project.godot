@@ -44,6 +44,11 @@ _global_script_classes=[ {
 "language": "NativeScript",
 "path": "res://Native/GDNativeFileDialog.gdns"
 }, {
+"base": "Control",
+"class": "GodotTour",
+"language": "GDScript",
+"path": "res://addons/godottour/GodotTour.gd"
+}, {
 "base": "Reference",
 "class": "IFormatImporter",
 "language": "GDScript",
@@ -77,6 +82,7 @@ _global_script_class_icons={
 "GDAudioWaveRenderer": "",
 "GDFilewatcher": "",
 "GDNativeFileDialog": "",
+"GodotTour": "",
 "IFormatImporter": "",
 "OriginView": "",
 "SQLiteWrapper": "",
@@ -86,8 +92,10 @@ _global_script_class_icons={
 
 [application]
 
-config/name="AssetsBrowser"
+config/name="Assets Manager"
 run/main_scene="res://Startscreen/StartScreen.tscn"
+boot_splash/image="res://Banner.png"
+boot_splash/bg_color=Color( 0.0941176, 0.0901961, 0.121569, 1 )
 config/icon="res://icon.png"
 
 [autoload]
@@ -98,7 +106,7 @@ ProgramManager="*res://ProgramManager.gd"
 
 [editor_plugins]
 
-enabled=PoolStringArray( "res://addons/godot-sqlite/plugin.cfg", "res://addons/tooluis/plugin.cfg" )
+enabled=PoolStringArray( "res://addons/godot-sqlite/plugin.cfg", "res://addons/godottour/plugin.cfg", "res://addons/tooluis/plugin.cfg" )
 
 [gui]
 

@@ -4,6 +4,7 @@ onready var _Recent := $VBoxContainer/ScrollContainer/Recent
 onready var _NativeDialogs := $NativeDialogs
 onready var _InfoDialog := $CanvasLayer/InfoDialog
 onready var _DisclaimerDialog := $CanvasLayer/DisclaimerDialog
+onready var _GodotTour := $CanvasLayer/GodotTour
 
 func _ready():
 	if !ProgramManager.settings.disclaimer_accepted:
@@ -23,6 +24,15 @@ func _ready():
 		tmp.add_color_override("font_color", Color("#6e9dff"))
 		tmp.connect("pressed", self, "_open_recent", [recent])
 		_Recent.add_child(tmp)
+		
+	_start_tour()
+
+func _start_tour():
+	if ProgramManager.settings.disclaimer_accepted and (ProgramManager.settings.tutorial_step < ProgramManager.settings.TutorialStep.LIBRARY_SCREEN):
+		_GodotTour.visible = true
+		_GodotTour.start()
+	else:
+		_GodotTour.visible = false
 
 func _on_NewProject_pressed():
 	var path : PoolStringArray = _NativeDialogs.show_modal()
@@ -67,3 +77,9 @@ func _check_dir_is_empty(path : String) -> bool:
 func _open_recent(path: String):
 	var file : File = File.new()
 	_try_open_library(path, !file.file_exists(path + "/assets.db"), "Not a valid asset library!")
+
+func _on_DisclaimerDialog_popup_hide():
+	_start_tour()
+
+func _on_GodotTour_tour_finished():
+	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.LIBRARY_SCREEN

@@ -4,7 +4,6 @@
 [ext_resource path="res://Startscreen/DisclaimerDialog.gd" type="Script" id=2]
 
 [node name="DisclaimerDialog" type="WindowDialog"]
-visible = true
 margin_right = 573.0
 margin_bottom = 468.0
 script = ExtResource( 2 )
@@ -29,16 +28,24 @@ margin_bottom = 411.0
 size_flags_vertical = 3
 custom_fonts/bold_font = ExtResource( 1 )
 bbcode_enabled = true
-bbcode_text = "[b]Disclaimer[/b]
+bbcode_text = "[u][b]Disclaimer[/b][/u]
 
-1. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+[b]1. Nature of the Software[/b]
+This application functions as a file browser tailored for assets that users have either created or acquired, and subsequently imported using this software. Its primary purpose is to facilitate the efficient locating and exporting of assets from the designated library directory, a directory chosen by the user for the importation of assets. Please note that upon import, each file is relocated to this specific directory.
 
-2. Always keep a backup copy of your original files. No software is perfect, not even this one."
+[b]2. Limitations of the Software[/b]
+It is important to clarify that this software does not provide functionalities for downloading, purchasing, or creating new assets. Additionally, it lacks features related to data backup or recovery. Users are responsible for independently backing up the library directory, wherein all assets are stored. The author of this software bears no responsibility for any data loss incurred by the user.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. "
 text = "Disclaimer
 
-1. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+1. Nature of the Software
+This application functions as a file browser tailored for assets that users have either created or acquired, and subsequently imported using this software. Its primary purpose is to facilitate the efficient locating and exporting of assets from the designated library directory, a directory chosen by the user for the importation of assets. Please note that upon import, each file is relocated to this specific directory.
 
-2. Always keep a backup copy of your original files. No software is perfect, not even this one."
+2. Limitations of the Software
+It is important to clarify that this software does not provide functionalities for downloading, purchasing, or creating new assets. Additionally, it lacks features related to data backup or recovery. Users are responsible for independently backing up the library directory, wherein all assets are stored. The author of this software bears no responsibility for any data loss incurred by the user.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. "
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 margin_top = 415.0

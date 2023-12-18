@@ -1,10 +1,32 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://Assets/Theme/noto-sans-bold.tres" type="DynamicFont" id=1]
 [ext_resource path="res://Native/GDNativeFileDialog.gdns" type="Script" id=2]
 [ext_resource path="res://Startscreen/StartScreen.gd" type="Script" id=3]
 [ext_resource path="res://Startscreen/AcceptDialog.gd" type="Script" id=4]
 [ext_resource path="res://Startscreen/DisclaimerDialog.tscn" type="PackedScene" id=5]
+[ext_resource path="res://addons/godottour/GodotTour.gd" type="Script" id=6]
+[ext_resource path="res://addons/godottour/TourStep.gd" type="Script" id=7]
+
+[sub_resource type="Resource" id=1]
+script = ExtResource( 7 )
+control = NodePath("../../VBoxContainer/NewProject")
+text = "Allows you to create a new directory where assets will be stored."
+
+[sub_resource type="Resource" id=2]
+script = ExtResource( 7 )
+control = NodePath("../../VBoxContainer/OpenProject")
+text = "Allows you to open an existing library directory. (Must include an assets.db file)"
+
+[sub_resource type="Resource" id=3]
+script = ExtResource( 7 )
+control = NodePath("../../VBoxContainer/ScrollContainer/Recent")
+text = "A list of all recently opened libraries."
+
+[sub_resource type="Resource" id=4]
+script = ExtResource( 7 )
+control = NodePath("")
+text = "The tutorial continues after you create a new library or open an existing one."
 
 [node name="StartScreen" type="CenterContainer"]
 anchor_right = 1.0
@@ -76,6 +98,7 @@ size_flags_vertical = 3
 
 [node name="NativeDialogs" type="Node" parent="."]
 script = ExtResource( 2 )
+dialog_type = 2
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -88,5 +111,13 @@ script = ExtResource( 4 )
 [node name="DisclaimerDialog" parent="CanvasLayer" instance=ExtResource( 5 )]
 visible = false
 
+[node name="GodotTour" type="Control" parent="CanvasLayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 6 )
+steps = [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ), SubResource( 4 ) ]
+
 [connection signal="pressed" from="VBoxContainer/NewProject" to="." method="_on_NewProject_pressed"]
 [connection signal="pressed" from="VBoxContainer/OpenProject" to="." method="_on_OpenProject_pressed"]
+[connection signal="popup_hide" from="CanvasLayer/DisclaimerDialog" to="." method="_on_DisclaimerDialog_popup_hide"]
+[connection signal="tour_finished" from="CanvasLayer/GodotTour" to="." method="_on_GodotTour_tour_finished"]

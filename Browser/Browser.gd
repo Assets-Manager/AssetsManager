@@ -16,6 +16,7 @@ onready var _HomeButton := $MarginContainer/HBoxContainer/Home
 onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
 onready var _NativeDialog := $NativeDialog
 onready var _InfoDialog := $CanvasLayer/InfoDialog
+onready var _GodotTour := $CanvasLayer/GodotTour
 
 var _DirectoryToDelete : int = -1
 var _VisibleCards : int = 0
@@ -26,6 +27,12 @@ func _ready() -> void:
 	AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
 	
 	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
+	
+	if ProgramManager.settings.tutorial_step < ProgramManager.settings.TutorialStep.BROWSER_SCREEN:
+		_GodotTour.visible = true
+		_GodotTour.start()
+	else:
+		_GodotTour.visible = false
 
 # ---------------------------------------------
 # 			   UI import update
@@ -271,3 +278,6 @@ func _on_CloseLib_pressed() -> void:
 	ProgramManager.settings.last_opened = ""
 	AssetsLibrary.close()
 	get_tree().change_scene("res://Startscreen/StartScreen.tscn")
+
+func _on_GodotTour_tour_finished():
+	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN
