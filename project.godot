@@ -54,10 +54,15 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://FormatImporters/IFormatImporter.gd"
 }, {
-"base": "Spatial",
+"base": "Control",
+"class": "IViewer",
+"language": "GDScript",
+"path": "res://Viewers/IViewer.gd"
+}, {
+"base": "Reference",
 "class": "OriginView",
 "language": "GDScript",
-"path": "res://3DEditor/ObjectProperties/OriginView.gd"
+"path": "res://Viewers/3DEditor/ObjectProperties/OriginView.gd"
 }, {
 "base": "Reference",
 "class": "SQLiteWrapper",
@@ -69,10 +74,15 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Settings.gd"
 }, {
-"base": "Object",
+"base": "Reference",
 "class": "SpatialUtils",
 "language": "GDScript",
-"path": "res://3DEditor/SpatialUtils.gd"
+"path": "res://Viewers/3DEditor/SpatialUtils.gd"
+}, {
+"base": "Reference",
+"class": "ViewerPlugin",
+"language": "GDScript",
+"path": "res://Viewers/ViewerPlugin.gd"
 } ]
 _global_script_class_icons={
 "CustomFileDialog": "",
@@ -84,10 +94,12 @@ _global_script_class_icons={
 "GDNativeFileDialog": "",
 "GodotTour": "",
 "IFormatImporter": "",
+"IViewer": "",
 "OriginView": "",
 "SQLiteWrapper": "",
 "Settings": "",
-"SpatialUtils": ""
+"SpatialUtils": "",
+"ViewerPlugin": ""
 }
 
 [application]
@@ -105,6 +117,7 @@ config/version="1.0.0"
 AssetsDatabase="*res://Filesystem/AssetsDatabase.gd"
 AssetsLibrary="*res://Filesystem/AssetsLibrary.gd"
 ProgramManager="*res://ProgramManager.gd"
+WindowManager="*res://WindowManager/WindowManager.gd"
 
 [editor_plugins]
 

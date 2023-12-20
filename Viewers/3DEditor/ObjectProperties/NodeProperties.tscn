@@ -1,9 +1,21 @@
 [gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://addons/tooluis/Scenes/Properties/VectorProperty.tscn" type="PackedScene" id=1]
-[ext_resource path="res://3DEditor/ObjectProperties/NodeProperties.gd" type="Script" id=2]
-[ext_resource path="res://3DEditor/ObjectProperties/OriginView.tscn" type="PackedScene" id=3]
-[ext_resource path="res://3DEditor/ViewportContainer.gd" type="Script" id=4]
+[ext_resource path="res://Viewers/3DEditor/ObjectProperties/NodeProperties.gd" type="Script" id=2]
+[ext_resource path="res://Viewers/3DEditor/ObjectProperties/OriginView.tscn" type="PackedScene" id=3]
+
+[sub_resource type="GDScript" id=2]
+script/source = "extends ViewportContainer
+
+onready var _Viewport := $Viewport
+
+func _ready() -> void:
+	mouse_filter = MOUSE_FILTER_PASS
+	
+func _gui_input(event: InputEvent) -> void:
+	_Viewport.input(event)
+	_Viewport.unhandled_input(event)
+"
 
 [sub_resource type="World" id=1]
 
@@ -15,38 +27,38 @@ script = ExtResource( 2 )
 
 [node name="Translation" parent="." instance=ExtResource( 1 )]
 margin_right = 251.0
-margin_bottom = 82.0
+margin_bottom = 100.0
 title = "Translation"
 
 [node name="RotationDegrees" parent="." instance=ExtResource( 1 )]
-margin_top = 86.0
+margin_top = 104.0
 margin_right = 251.0
-margin_bottom = 168.0
+margin_bottom = 204.0
 title = "Rotation Degrees"
 
 [node name="Scale" parent="." instance=ExtResource( 1 )]
-margin_top = 172.0
+margin_top = 208.0
 margin_right = 251.0
-margin_bottom = 254.0
+margin_bottom = 308.0
 title = "Scale"
 
 [node name="Origin" parent="." instance=ExtResource( 1 )]
-margin_top = 258.0
+margin_top = 312.0
 margin_right = 251.0
-margin_bottom = 340.0
+margin_bottom = 412.0
 title = "Origin"
 
 [node name="ViewportContainer" type="ViewportContainer" parent="."]
-margin_top = 344.0
+margin_top = 416.0
 margin_right = 251.0
 margin_bottom = 600.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 stretch = true
-script = ExtResource( 4 )
+script = SubResource( 2 )
 
 [node name="Viewport" type="Viewport" parent="ViewportContainer"]
-size = Vector2( 500, 500 )
+size = Vector2( 251, 184 )
 own_world = true
 world = SubResource( 1 )
 transparent_bg = true

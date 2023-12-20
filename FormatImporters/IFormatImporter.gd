@@ -24,6 +24,16 @@ func get_type_id() -> int:
 # Must be overwritten
 static func get_extensions() -> Array:
 	return []
+	
+# Loads a file and converts it to a godot usable format
+# Must return either a node or a PackedScene
+func load_format(path : String):
+	return null
+	
+# Saves data from godot to a file.
+# Must return OK on success.
+func save_format(path : String, object) -> int:
+	return OK
 
 # Imports a new asset
 func import(path: String, update_id : int) -> Dictionary:

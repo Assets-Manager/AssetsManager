@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=2]
 
-[ext_resource path="res://3DEditor/GimbleCam.tscn" type="PackedScene" id=1]
-[ext_resource path="res://3DEditor/AssetViewport.gd" type="Script" id=2]
-[ext_resource path="res://3DEditor/Outlines/CubeOutline.gd" type="Script" id=3]
+[ext_resource path="res://Viewers/3DEditor/AssetViewport.gd" type="Script" id=1]
+[ext_resource path="res://Viewers/3DEditor/Outlines/CubeOutline.gd" type="Script" id=2]
+[ext_resource path="res://Viewers/3DEditor/GimbleCam.tscn" type="PackedScene" id=3]
 [ext_resource path="res://Assets/Materials/OverlayDepth.material" type="Material" id=4]
 
 [sub_resource type="SphereMesh" id=1]
@@ -12,9 +12,9 @@ radial_segments = 8
 rings = 8
 
 [node name="AssetViewport" type="Spatial"]
-script = ExtResource( 2 )
+script = ExtResource( 1 )
 
-[node name="GimbleCam" parent="." instance=ExtResource( 1 )]
+[node name="GimbleCam" parent="." instance=ExtResource( 3 )]
 MinZoom = 1
 
 [node name="Asset" type="Spatial" parent="."]
@@ -27,4 +27,4 @@ material/0 = ExtResource( 4 )
 [node name="Outline" type="MeshInstance" parent="."]
 visible = false
 material_override = ExtResource( 4 )
-script = ExtResource( 3 )
+script = ExtResource( 2 )

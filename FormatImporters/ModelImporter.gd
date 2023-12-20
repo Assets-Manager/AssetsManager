@@ -20,6 +20,11 @@ static func get_extensions() -> Array:
 		"fbx"
 	]
 	
+func load_format(path : String):
+	var loader := GDAssimpLoader.new()
+	var scene : PackedScene = loader.load(path)
+	return scene
+	
 func _import_asset(path : String) -> int:
 	var ret : int = ._import_asset(path)
 	if (ret == OK) && (path.get_extension().to_lower() == "obj"):

@@ -1,9 +1,9 @@
 extends VBoxContainer
 
-const CUBE_PROPERTIES = preload("res://3DEditor/ObjectProperties/ShapeProperties/CubeProperties.tscn")
-const SPHERE_PROPERTIES = preload("res://3DEditor/ObjectProperties/ShapeProperties/SphereProperties.tscn")
-const CYLINDER_PROPERTIES = preload("res://3DEditor/ObjectProperties/ShapeProperties/CylinderProperties.tscn")
-const SLOPE_PROPERTIES = preload("res://3DEditor/ObjectProperties/ShapeProperties/SlopeProperties.tscn")
+const CUBE_PROPERTIES = preload("res://Viewers/3DEditor/ObjectProperties/ShapeProperties/CubeProperties.tscn")
+const SPHERE_PROPERTIES = preload("res://Viewers/3DEditor/ObjectProperties/ShapeProperties/SphereProperties.tscn")
+const CYLINDER_PROPERTIES = preload("res://Viewers/3DEditor/ObjectProperties/ShapeProperties/CylinderProperties.tscn")
+const SLOPE_PROPERTIES = preload("res://Viewers/3DEditor/ObjectProperties/ShapeProperties/SlopeProperties.tscn")
 
 var _Node : Spatial = null
 var _ShapeProperties : Control = null

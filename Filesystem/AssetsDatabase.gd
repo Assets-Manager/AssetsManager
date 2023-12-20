@@ -109,6 +109,19 @@ func get_directory_id(parentId : int, name : String) -> int:
 			
 	return result
 
+func get_asset_type(id : int) -> String:
+	var result = ""
+	if _DB:
+		var query : String = "SELECT b.name as name FROM assets as a LEFT JOIN asset_types as b ON(b.id = a.type) WHERE a.id = ?"
+		_Lock.lock()
+		if _DB.query_with_bindings(query, [id]):
+			if !_DB.query_result.empty():
+				result = _DB.query_result[0].name
+		
+		_Lock.unlock()
+	
+	return result
+
 # Returns the total numbers of assets for a given search in a directory.
 func get_assets_count(directoryId : int, search : String) -> int:
 	if _DB:

@@ -1,5 +1,7 @@
 extends CenterContainer
 
+const MAIN_SCENE = "res://WindowManager/WindowManagerControl.tscn"
+
 onready var _Recent := $VBoxContainer/ScrollContainer/Recent
 onready var _NativeDialogs := $NativeDialogs
 onready var _InfoDialog := $CanvasLayer/InfoDialog
@@ -13,7 +15,7 @@ func _ready():
 	# Reopens the last loaded library.
 	if !ProgramManager.settings.last_opened.empty():
 		if AssetsLibrary.open(ProgramManager.settings.last_opened):
-			get_tree().change_scene("res://Browser/Browser.tscn")
+			get_tree().change_scene(MAIN_SCENE)
 			return
 	
 	# Loads the recent libraries list
@@ -54,7 +56,7 @@ func _try_open_library(path: String, show_error : bool, error : String) -> void:
 		if AssetsLibrary.open(path):	# Loads the library
 			if ProgramManager.settings.recent_asset_libraries.find(path) == -1:
 				ProgramManager.settings.recent_asset_libraries.append(path)
-			get_tree().change_scene("res://Browser/Browser.tscn")
+			get_tree().change_scene(MAIN_SCENE)
 		else:
 			_InfoDialog.dialog_text = tr("Failed to open library!")
 			_InfoDialog.popup_centered()

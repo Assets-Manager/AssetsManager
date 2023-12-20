@@ -160,6 +160,8 @@ func _card_pressed(id: int, is_dir : bool) -> void:
 		_HomeButton.mouse_default_cursor_shape = _BackButton.mouse_default_cursor_shape
 		_BackButton.disabled = AssetsLibrary.current_directory == 0
 		_HomeButton.disabled = _BackButton.disabled
+	else:
+		WindowManager.open_viewer(id)
 
 # Exports an asset
 func _export_assets(id: int, is_dir : bool) -> void:

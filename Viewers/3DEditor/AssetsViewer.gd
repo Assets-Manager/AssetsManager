@@ -1,14 +1,41 @@
-extends HSplitContainer
+extends IViewer
 
-const NODE_PROPERTIES = preload("res://3DEditor/ObjectProperties/ObjectProperties.tscn")
+const NODE_PROPERTIES = preload("res://Viewers/3DEditor/ObjectProperties/ObjectProperties.tscn")
 
-onready var _SceneTree : Tree = $Panel/Properties/SceneTree
-onready var _AssetViewport := $ViewportContainer/Viewport/AssetViewport
-onready var _Properties := $Panel/Properties
+onready var _SceneTree : Tree = $Split/Panel/Properties/SceneTree
+onready var _AssetViewport := $Split/ViewportContainer/Viewport/AssetViewport
+onready var _Properties := $Split/Panel/Properties
+onready var _Viewport := $Split/ViewportContainer/Viewport
 
 var _PropertyEditors : Dictionary = {}
 var _CurrentPropertyEditor : Control = null
 var _TabIndex : int = 0
+
+func load_asset(asset_id : int) -> int:
+	var path = AssetsLibrary.get_asset_path(asset_id)
+	if path.empty():
+		return FAILED
+	
+	var loader : IFormatImporter = AssetsLibrary.find_importer(path.get_extension())
+	if loader:
+		var data = loader.load_format(path)
+		if data is PackedScene:
+			data = data.instance()
+		elif !(data is Spatial):	# Only 3D nodes are supported
+			return FAILED
+		
+		_AssetViewport.load_asset(data)
+		_build_tree(null, data)
+	
+	return OK
+
+func cleanup() -> void:
+	for k in _PropertyEditors:
+		_PropertyEditors[k].queue_free()
+	_PropertyEditors.clear()
+	
+	_SceneTree.clear()
+	_AssetViewport.cleanup()
 
 func _build_tree(parent : TreeItem, node : Spatial) -> void:
 	var treeItem : TreeItem = _SceneTree.create_item(parent)
@@ -17,9 +44,6 @@ func _build_tree(parent : TreeItem, node : Spatial) -> void:
 	
 	for c in node.get_children():
 		_build_tree(treeItem, c)
-
-func _on_AssetViewport_asset_loaded(asset_scene : Spatial) -> void:
-	_build_tree(null, asset_scene)
 
 func _show_outline(node : Spatial) -> void:
 	var aabb = SpatialUtils.get_aabb(node)

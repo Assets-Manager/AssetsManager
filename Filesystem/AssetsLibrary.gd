@@ -235,6 +235,17 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 func get_assets_count(directoryId : int, search : String) -> int:
 	return AssetsDatabase.get_assets_count(directoryId, search)
 
+func get_asset_type(id : int) -> String:
+	return AssetsDatabase.get_asset_type(id)
+	
+func get_asset_path(asset_id : int) -> String:
+	var result = ""
+	var asset = AssetsDatabase.get_asset(asset_id)
+	if !asset.empty():
+		result = build_assets_path(asset.filename)
+		
+	return result
+
 # ---------------------------------------------
 # 			    Update / Import
 # ---------------------------------------------
@@ -296,7 +307,7 @@ func _render_and_index_thread(_unused : Object) -> void:
 				
 				emit_signal("increase_import_counter")
 				
-func _find_importer(ext : String) -> IFormatImporter:
+func find_importer(ext : String) -> IFormatImporter:
 	for importer in _Importers:
 		if _Importers[importer].get_extensions().find(ext) != -1:
 			return _Importers[importer]
@@ -307,7 +318,7 @@ func _build_import_file_list(files: PoolStringArray) -> Array:
 	var directories : Array = []
 	for file in files:
 		if _Directory.file_exists(file):
-			var importer : IFormatImporter = _find_importer(file.get_extension().to_lower())
+			var importer : IFormatImporter = find_importer(file.get_extension().to_lower())
 			if importer:
 				newFiles.append({"file": file, "importer": importer})
 		elif _Directory.dir_exists(file):
@@ -332,7 +343,7 @@ func _build_import_file_list(files: PoolStringArray) -> Array:
 			while file_name != "":
 				if (file_name != ".") && (file_name != ".."):
 					if !directory.current_is_dir():
-						var importer : IFormatImporter = _find_importer(file_name.get_extension().to_lower())
+						var importer : IFormatImporter = find_importer(file_name.get_extension().to_lower())
 						if importer:
 							newFiles.append({"file": dir.dir + "/" + file_name, "importer": importer, "parent_id": parent_dir_id})
 					else:

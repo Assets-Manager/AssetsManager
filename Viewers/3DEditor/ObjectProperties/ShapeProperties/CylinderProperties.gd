@@ -1,7 +1,7 @@
 extends VBoxContainer
 
-const COLLISION_OVERLAY_MATERIAL = preload("res://Assets/CollisionOverlayDepth.material")
-const CYLINDER_COLLISION_SHAPE = preload("res://3DEditor/Outlines/CylinderOutline.gd")
+const COLLISION_OVERLAY_MATERIAL = preload("res://Assets/Materials/CollisionOverlayDepth.material")
+const CYLINDER_COLLISION_SHAPE = preload("res://Viewers/3DEditor/Outlines/CylinderOutline.gd")
 
 var _Node : Spatial = null
 var _CollisionShape : MeshInstance = null
