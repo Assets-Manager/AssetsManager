@@ -98,7 +98,6 @@ size_flags_vertical = 3
 
 [node name="NativeDialogs" type="Node" parent="."]
 script = ExtResource( 2 )
-dialog_type = 2
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

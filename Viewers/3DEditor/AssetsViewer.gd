@@ -6,10 +6,32 @@ onready var _SceneTree : Tree = $Split/Panel/Properties/SceneTree
 onready var _AssetViewport := $Split/ViewportContainer/Viewport/AssetViewport
 onready var _Properties := $Split/Panel/Properties
 onready var _Viewport := $Split/ViewportContainer/Viewport
+onready var _History : History = History.new()
 
 var _PropertyEditors : Dictionary = {}
 var _CurrentPropertyEditor : Control = null
 var _TabIndex : int = 0
+
+var _GoBackShortcut : InputEventKey
+var _GoForwardShortcut : InputEventKey
+
+func _ready():
+	_GoBackShortcut = InputEventKey.new()
+	_GoBackShortcut.scancode = KEY_Z
+	_GoBackShortcut.pressed = true
+	_GoBackShortcut.control = true
+	
+	_GoForwardShortcut = InputEventKey.new()
+	_GoForwardShortcut.scancode = KEY_Z
+	_GoForwardShortcut.pressed = true
+	_GoForwardShortcut.control = true
+	_GoForwardShortcut.shift = true
+
+func _input(event):
+	if event.shortcut_match(_GoBackShortcut):
+		_History.go_back()
+	elif event.shortcut_match(_GoForwardShortcut):
+		_History.go_forward()
 
 func load_asset(asset_id : int) -> int:
 	var path = AssetsLibrary.get_asset_path(asset_id)
@@ -36,6 +58,7 @@ func cleanup() -> void:
 	
 	_SceneTree.clear()
 	_AssetViewport.cleanup()
+	_History.clear()
 
 func _build_tree(parent : TreeItem, node : Spatial) -> void:
 	var treeItem : TreeItem = _SceneTree.create_item(parent)
@@ -75,7 +98,7 @@ func _on_SceneTree_item_selected() -> void:
 		_CurrentPropertyEditor.visible = true
 		_Properties.add_child(_CurrentPropertyEditor)
 		_PropertyEditors[node.get_path()] = _CurrentPropertyEditor
-		_CurrentPropertyEditor.set_node(node)
+		_CurrentPropertyEditor.set_node_and_history(node, _History)
 		_CurrentPropertyEditor.current_tab = _TabIndex
 		_CurrentPropertyEditor.connect("tab_changed", self, "_tab_changed")
 

@@ -44,6 +44,10 @@ func set_value(val : Vector3) -> void:
 	if !_XValue:
 		return
 	
+	_XValue.release_focus()
+	_YValue.release_focus()
+	_ZValue.release_focus()
+	
 	_XValue.value = val.x
 	_YValue.value = val.y
 	_ZValue.value = val.z
@@ -52,6 +56,10 @@ func set_value(val : Vector3) -> void:
 func _vector_value_changed(new_value : float, idx : int) -> void:
 	value[idx] = new_value
 	_Revert.visible = value != default_value
+	
+	_XValue.release_focus()
+	_YValue.release_focus()
+	_ZValue.release_focus()
 	
 	emit_signal("value_changed", value)
 

@@ -1,6 +1,7 @@
 extends Node
 
 signal switch_view(viewer)
+signal switch_home()
 
 const VIEWERS_PATH = "res://Viewers/"
 
@@ -16,6 +17,9 @@ func get_viewers() -> Array:
 	for k in _Viewers:
 		result.append(_Viewers[k])
 	return result
+	
+func show_main_window() -> void:
+	emit_signal("switch_home")
 	
 func open_viewer(asset_id : int) -> int:
 	var type : String = AssetsLibrary.get_asset_type(asset_id)

@@ -50,6 +50,11 @@ _global_script_classes=[ {
 "path": "res://addons/godottour/GodotTour.gd"
 }, {
 "base": "Reference",
+"class": "History",
+"language": "GDScript",
+"path": "res://addons/tooluis/Scripts/History.gd"
+}, {
+"base": "Reference",
 "class": "IFormatImporter",
 "language": "GDScript",
 "path": "res://FormatImporters/IFormatImporter.gd"
@@ -93,6 +98,7 @@ _global_script_class_icons={
 "GDFilewatcher": "",
 "GDNativeFileDialog": "",
 "GodotTour": "",
+"History": "",
 "IFormatImporter": "",
 "IViewer": "",
 "OriginView": "",
