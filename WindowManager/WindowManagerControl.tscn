@@ -14,3 +14,4 @@ tabs_visible = false
 script = ExtResource( 2 )
 
 [node name="Browser" parent="." instance=ExtResource( 1 )]
+size_flags_vertical = 3

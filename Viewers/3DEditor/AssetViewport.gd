@@ -1,7 +1,5 @@
 extends Spatial
 
-const GdAssimpLoader = preload("res://Native/GDAssimpLoader.gdns")
-
 onready var _Assets := $Asset
 onready var _Pivot := $Pivot
 onready var _Outline := $Outline

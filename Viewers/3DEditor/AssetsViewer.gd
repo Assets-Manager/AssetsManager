@@ -2,15 +2,20 @@ extends IViewer
 
 const NODE_PROPERTIES = preload("res://Viewers/3DEditor/ObjectProperties/ObjectProperties.tscn")
 
-onready var _SceneTree : Tree = $Split/Panel/Properties/SceneTree
-onready var _AssetViewport := $Split/ViewportContainer/Viewport/AssetViewport
-onready var _Properties := $Split/Panel/Properties
-onready var _Viewport := $Split/ViewportContainer/Viewport
+onready var _SceneTree : Tree = $VBoxContainer/Split/Panel/Properties/SceneTree
+onready var _AssetViewport := $VBoxContainer/Split/ViewportContainer/Viewport/AssetViewport
+onready var _Properties := $VBoxContainer/Split/Panel/Properties
+onready var _Viewport := $VBoxContainer/Split/ViewportContainer/Viewport
 onready var _History : History = History.new()
+onready var _Save := $VBoxContainer/MarginContainer/HBoxContainer/Save
+onready var _Close := $VBoxContainer/MarginContainer/HBoxContainer/Close
+onready var _UnsavedChangesDialog := $CanvasLayer/UnsavedChangesDialog
 
 var _PropertyEditors : Dictionary = {}
 var _CurrentPropertyEditor : Control = null
 var _TabIndex : int = 0
+
+var _HasChanges : bool = true
 
 var _GoBackShortcut : InputEventKey
 var _GoForwardShortcut : InputEventKey
@@ -26,6 +31,13 @@ func _ready():
 	_GoForwardShortcut.pressed = true
 	_GoForwardShortcut.control = true
 	_GoForwardShortcut.shift = true
+	
+	_UnsavedChangesDialog.get_ok().text = tr("Save")
+	var button = _UnsavedChangesDialog.add_button(tr("No"), true, "no")
+	
+	# Move the new button to the middle.
+	button.get_parent().move_child(button, 3)
+	button.get_parent().move_child(button.get_parent().get_children()[button.get_parent().get_child_count() - 1], 4)
 
 func _input(event):
 	if event.shortcut_match(_GoBackShortcut):
@@ -55,6 +67,7 @@ func cleanup() -> void:
 	for k in _PropertyEditors:
 		_PropertyEditors[k].queue_free()
 	_PropertyEditors.clear()
+	_CurrentPropertyEditor = null
 	
 	_SceneTree.clear()
 	_AssetViewport.cleanup()
@@ -102,12 +115,37 @@ func _on_SceneTree_item_selected() -> void:
 		_CurrentPropertyEditor.current_tab = _TabIndex
 		_CurrentPropertyEditor.connect("tab_changed", self, "_tab_changed")
 
+func _update_has_changes(changes : bool) -> void:
+	_HasChanges = changes
+	_Save.disabled = !_HasChanges
+
 func _transform_changed(node : Spatial) -> void:
 	_AssetViewport.show_pivot(node.global_transform.origin)
 	_show_outline(node)
+	_update_has_changes(true)
 	
 func _origin_changed(node : Spatial) -> void:
 	_show_outline(node)
+	_update_has_changes(true)
 
 func _tab_changed(idx: int) -> void:
 	_TabIndex = idx
+
+func _on_Close_pressed():
+	if _HasChanges:
+		_UnsavedChangesDialog.popup_centered()
+		return
+	
+	WindowManager.show_main_window()
+
+func _on_Save_pressed():
+	_update_has_changes(false)
+
+func _on_UnsavedChangesDialog_confirmed():
+	_on_Save_pressed()
+	WindowManager.show_main_window()
+
+func _on_UnsavedChangesDialog_custom_action(action):
+	if action == "no":
+		_UnsavedChangesDialog.hide()
+		WindowManager.show_main_window()

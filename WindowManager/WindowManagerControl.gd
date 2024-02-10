@@ -8,10 +8,16 @@ func _ready():
 	for viewer in viewers:
 		add_child(viewer)
 		
+func _cleanup() -> void:
+	if current_tab != 0:
+		get_children()[current_tab].cleanup()
+		
 func _switch_view(viewer : IViewer) -> void:
 	var index = get_children().find(viewer)
 	if index != -1:
+		_cleanup()
 		current_tab = index
 
 func _switch_home() -> void:
+	_cleanup()
 	current_tab = 0

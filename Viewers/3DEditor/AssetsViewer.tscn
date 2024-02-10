@@ -1,47 +1,111 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Viewers/3DEditor/AssetsViewer.gd" type="Script" id=1]
 [ext_resource path="res://Viewers/3DEditor/ViewportContainer.gd" type="Script" id=2]
 [ext_resource path="res://Viewers/3DEditor/AssetViewport.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Assets/Material Icons/close.svg" type="Texture" id=4]
+[ext_resource path="res://Assets/Material Icons/save.svg" type="Texture" id=5]
 
 [node name="AssetViewer" type="Control"]
-margin_right = 40.0
-margin_bottom = 40.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 script = ExtResource( 1 )
 
-[node name="Split" type="HSplitContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="ViewportContainer" type="ViewportContainer" parent="Split"]
-margin_right = 18.0
-margin_bottom = 40.0
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+margin_right = 1024.0
+margin_bottom = 54.0
+rect_min_size = Vector2( 0, 50 )
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 1014.0
+margin_bottom = 44.0
+
+[node name="Close" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+margin_right = 34.0
+margin_bottom = 34.0
+rect_min_size = Vector2( 34, 34 )
+mouse_default_cursor_shape = 2
+icon = ExtResource( 4 )
+icon_align = 1
+expand_icon = true
+
+[node name="Control" type="Control" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+margin_left = 38.0
+margin_right = 966.0
+margin_bottom = 34.0
+size_flags_horizontal = 3
+
+[node name="Save" type="Button" parent="VBoxContainer/MarginContainer/HBoxContainer"]
+margin_left = 970.0
+margin_right = 1004.0
+margin_bottom = 34.0
+rect_min_size = Vector2( 34, 34 )
+mouse_default_cursor_shape = 2
+disabled = true
+icon = ExtResource( 5 )
+icon_align = 1
+expand_icon = true
+
+[node name="Split" type="HSplitContainer" parent="VBoxContainer"]
+margin_top = 58.0
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_vertical = 3
+
+[node name="ViewportContainer" type="ViewportContainer" parent="VBoxContainer/Split"]
+margin_right = 608.0
+margin_bottom = 542.0
 mouse_filter = 1
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
 stretch = true
 script = ExtResource( 2 )
 
-[node name="Viewport" type="Viewport" parent="Split/ViewportContainer"]
-size = Vector2( 18, 40 )
+[node name="Viewport" type="Viewport" parent="VBoxContainer/Split/ViewportContainer"]
+size = Vector2( 608, 542 )
 handle_input_locally = false
 render_target_update_mode = 3
 
-[node name="AssetViewport" parent="Split/ViewportContainer/Viewport" instance=ExtResource( 3 )]
+[node name="AssetViewport" parent="VBoxContainer/Split/ViewportContainer/Viewport" instance=ExtResource( 3 )]
 
-[node name="Panel" type="Panel" parent="Split"]
-margin_left = 30.0
-margin_right = 40.0
-margin_bottom = 40.0
+[node name="Panel" type="Panel" parent="VBoxContainer/Split"]
+margin_left = 620.0
+margin_right = 1024.0
+margin_bottom = 542.0
 size_flags_horizontal = 3
 
-[node name="Properties" type="HBoxContainer" parent="Split/Panel"]
+[node name="Properties" type="HBoxContainer" parent="VBoxContainer/Split/Panel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="SceneTree" type="Tree" parent="Split/Panel/Properties"]
-margin_right = 10.0
-margin_bottom = 40.0
+[node name="SceneTree" type="Tree" parent="VBoxContainer/Split/Panel/Properties"]
+margin_right = 404.0
+margin_bottom = 542.0
 size_flags_horizontal = 3
 
-[connection signal="item_selected" from="Split/Panel/Properties/SceneTree" to="." method="_on_SceneTree_item_selected"]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UnsavedChangesDialog" type="ConfirmationDialog" parent="CanvasLayer"]
+visible = true
+margin_right = 200.0
+margin_bottom = 80.0
+popup_exclusive = true
+window_title = ""
+dialog_text = "There are unsaved changes.
+Should these be saved?"
+
+[connection signal="pressed" from="VBoxContainer/MarginContainer/HBoxContainer/Close" to="." method="_on_Close_pressed"]
+[connection signal="pressed" from="VBoxContainer/MarginContainer/HBoxContainer/Save" to="." method="_on_Save_pressed"]
+[connection signal="item_selected" from="VBoxContainer/Split/Panel/Properties/SceneTree" to="." method="_on_SceneTree_item_selected"]
+[connection signal="confirmed" from="CanvasLayer/UnsavedChangesDialog" to="." method="_on_UnsavedChangesDialog_confirmed"]
+[connection signal="custom_action" from="CanvasLayer/UnsavedChangesDialog" to="." method="_on_UnsavedChangesDialog_custom_action"]

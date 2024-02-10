@@ -364,5 +364,16 @@ func _migrate() -> bool:
 			)
 		else:
 			ret = true
+			
+		if ret:
+			ret = _mirgrateV1()
+	
+	return ret
+
+func _mirgrateV1() -> bool:
+	var ret = false
+	if _DB.query("PRAGMA table_info(assets)"):
+		var results : Array = _DB.query_result
+		print(results)
 	
 	return ret

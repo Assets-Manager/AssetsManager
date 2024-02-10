@@ -369,10 +369,10 @@ func _files_dropped(files: PoolStringArray, _screen: int) -> void:
 	_FileQueue.append_array(newFiles)
 	_QueueLock.unlock()
 
-#	_render_and_index_thread(null)
+	_render_and_index_thread(null)
 
 	# Starts a new thread, but only if no one is already running.
-	if !_Thread:
-		_DirWatcher.paused = true
-		_Thread = Thread.new()
-		_Thread.start(self, "_render_and_index_thread", null)
+#	if !_Thread:
+#		_DirWatcher.paused = true
+#		_Thread = Thread.new()
+#		_Thread.start(self, "_render_and_index_thread", null)
