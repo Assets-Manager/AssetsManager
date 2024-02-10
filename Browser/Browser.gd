@@ -17,12 +17,18 @@ onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
 onready var _NativeDialog := $NativeDialog
 onready var _InfoDialog := $CanvasLayer/InfoDialog
 onready var _GodotTour := $CanvasLayer/GodotTour
+onready var _OverwriteDialog := $CanvasLayer/OverwriteDialog
 
 var _DirectoryToDelete : int = -1
 var _VisibleCards : int = 0
+var _FilesToApprove : Array = []
+
+var _Thumbnail : Texture = null
+var _ThumbnailThread : Thread = null
 
 func _ready() -> void:
 	AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
+	AssetsLibrary.connect("files_to_check", self, "_files_to_check")
 	AssetsLibrary.connect("new_asset_added", self, "_new_asset_added", [], CONNECT_DEFERRED)
 	AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
 	
@@ -38,6 +44,31 @@ func _ready() -> void:
 # 			   UI import update
 # ---------------------------------------------
 
+func _process(delta):
+	if _ThumbnailThread && !_ThumbnailThread.is_alive():
+		_Thumbnail = _ThumbnailThread.wait_to_finish()
+		_ThumbnailThread = null
+	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.empty() && !_OverwriteDialog.visible:
+		var file : Dictionary = _FilesToApprove.back()
+		match file.status:
+			AssetsLibrary.FileImportStatus.STATUS_OVERWRITE:
+				if !_Thumbnail:
+					_ThumbnailThread = Thread.new()
+					_ThumbnailThread.start(self, "_render_thumbnail", file)
+					print("START")
+				else:
+					_OverwriteDialog.set_first_element(_Thumbnail, tr("NEW") + " - " + file.file.get_file())
+					_OverwriteDialog.set_second_element(AssetsLibrary.get_asset_thumbnail_by_name(file.file.get_file()), tr("OLD") + " - " + file.file.get_file())
+					_OverwriteDialog.popup_centered()
+					_Thumbnail = null
+
+func _render_thumbnail(file) -> Texture:
+	return file.importer.render_thumbnail(file.file)
+
+func _exit_tree() -> void:
+	if _ThumbnailThread:
+		_ThumbnailThread.wait_to_finish()
+
 # Called if new assets needs to be imported
 # Shows and updates the importer dialog and its progress bar max items.
 func _update_total_import_assets(total_files : int) -> void:
@@ -47,6 +78,11 @@ func _update_total_import_assets(total_files : int) -> void:
 	if !_ImporterDialog.visible:
 		_ImporterDialog.set_value(0)
 		_ImporterDialog.popup_centered()
+
+# Called everytime an asset file is either a duplicate
+# or is dropped into a new folder.
+func _files_to_check(files: Array) -> void:
+	_FilesToApprove.append_array(files)
 
 # Called if a new assets were successfully imported
 # Updates the progressbar of the importer dialog.
@@ -281,3 +317,10 @@ func _on_CloseLib_pressed() -> void:
 
 func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN
+
+# Handles the users will to overwrite an asset
+func _on_OverwriteDialog_overwrite():
+	AssetsLibrary.handle_user_processed_file(_FilesToApprove.back())
+
+func _on_OverwriteDialog_popup_hide():
+	_FilesToApprove.pop_back()

@@ -27,7 +27,7 @@ static func get_extensions() -> Array:
 
 # Imports a new asset
 func import(path: String, update_id : int) -> Dictionary:
-	var thumbnail : Texture = _render_thumbnail(path)
+	var thumbnail : Texture = render_thumbnail(path)
 	var thumbnail_path : String = _Library.get_thumbnail_path() + "/" + _generate_thumbnail_name(path)
 	var can_proceed : bool = false
 	
@@ -67,5 +67,5 @@ func _import_asset(path : String) -> int:
 # Params:
 #	- path: Path of the file
 # Returns the newly rendered thumbnail.
-func _render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture:
 	return null

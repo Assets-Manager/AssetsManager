@@ -17,7 +17,7 @@ static func get_extensions() -> Array:
 		"webp"
 	]
 
-func _render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture:
 	var img : Image = Image.new()
 	var result : ImageTexture = null
 	if img.load(path) == OK:

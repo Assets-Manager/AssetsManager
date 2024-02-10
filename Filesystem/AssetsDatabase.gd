@@ -45,6 +45,21 @@ func get_parent_dir_id(directoryId: int) -> int:
 			return result[0].parent_id if result[0].parent_id != null else 0
 		
 	return 0
+	
+func get_asset_parent_dir_ids(assetId: int) -> Array:
+	if _DB:
+		_Lock.lock()
+		var result : Array = _DB.select_rows("asset_directory_rel", "ref_assets_id = " + str(assetId), ["ref_directory_id"])
+		_Lock.unlock()
+		if !result.empty():
+			var ret : Array = []
+			for id in result:
+				if id.ref_directory_id != null:
+					ret.append(id.ref_directory_id)
+			
+			return ret
+		
+	return []
 
 # Gets the name of a directory.
 func get_dir_name(directory_id : int) -> String:

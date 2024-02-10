@@ -13,6 +13,6 @@ static func get_extensions() -> Array:
 		"ogg"
 	]
 
-func _render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture:
 	var audio_renderer : GDAudioWaveRenderer = GDAudioWaveRenderer.new()
 	return audio_renderer.render_audio_wave(path, Vector2(128, 128))

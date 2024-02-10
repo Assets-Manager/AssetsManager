@@ -6,6 +6,14 @@ const BROKEN_IMAGE = preload("res://Assets/Material Icons/hide_image.svg")
 signal new_asset_added(id, name, thumbnail)
 signal update_total_import_assets(count)
 signal increase_import_counter()
+signal files_to_check(files)
+
+enum FileImportStatus {
+	STATUS_OK,
+	STATUS_IGNORE,
+	STATUS_DUPLICATE,
+	STATUS_OVERWRITE
+}
 
 var _AssetsPath : String = ""
 var _QueueLock : Mutex = Mutex.new()
@@ -235,6 +243,10 @@ func query_assets(directoryId : int, search: String, skip: int, count: int) -> A
 func get_assets_count(directoryId : int, search : String) -> int:
 	return AssetsDatabase.get_assets_count(directoryId, search)
 
+func get_asset_thumbnail_by_name(file : String) -> Texture:
+	var asset : Dictionary = AssetsDatabase.get_asset_by_name(file)
+	return _load_thumbnail(asset)
+
 # ---------------------------------------------
 # 			    Update / Import
 # ---------------------------------------------
@@ -245,6 +257,8 @@ func _process(_delta: float) -> void:
 		_Thread.wait_to_finish()
 		_Thread = null
 		_DirWatcher.paused = false
+	elif !_Thread && _TotalFilecount != 0:
+		_TotalFilecount = 0
 
 # Render and index thread for assets
 func _render_and_index_thread(_unused : Object) -> void:
@@ -302,6 +316,23 @@ func _find_importer(ext : String) -> IFormatImporter:
 			return _Importers[importer]
 	return null
 
+func _check_file_status(file : String) -> int:
+	var asset : Dictionary = AssetsDatabase.get_asset_by_name(file)
+	var status = FileImportStatus.STATUS_OK
+	if !asset.empty():
+		var f : File = File.new()
+		var modified : int = f.get_modified_time(file)
+		if modified != asset.last_modified:
+			var parents : Array = AssetsDatabase.get_asset_parent_dir_ids(asset.id)
+			if (current_directory in parents) or parents.empty():
+				status = FileImportStatus.STATUS_OVERWRITE
+			else:
+				status = FileImportStatus.STATUS_DUPLICATE
+		else:
+			status = FileImportStatus.STATUS_IGNORE
+			
+	return status
+
 func _build_import_file_list(files: PoolStringArray) -> Array:
 	var newFiles : Array = []
 	var directories : Array = []
@@ -309,13 +340,14 @@ func _build_import_file_list(files: PoolStringArray) -> Array:
 		if _Directory.file_exists(file):
 			var importer : IFormatImporter = _find_importer(file.get_extension().to_lower())
 			if importer:
-				newFiles.append({"file": file, "importer": importer})
+				var status : int = _check_file_status(file)
+				if status != FileImportStatus.STATUS_IGNORE:
+					newFiles.append({"file": file, "importer": importer, "status": status})
 		elif _Directory.dir_exists(file):
 			directories.append({"dir": file, "parent_id": current_directory})
 	
 	while !directories.empty():
 		var dir : Dictionary = directories.pop_back()
-		
 		var parent_dir_id : int = 0
 		
 		# Checks if the directory already exists.
@@ -334,28 +366,49 @@ func _build_import_file_list(files: PoolStringArray) -> Array:
 					if !directory.current_is_dir():
 						var importer : IFormatImporter = _find_importer(file_name.get_extension().to_lower())
 						if importer:
-							newFiles.append({"file": dir.dir + "/" + file_name, "importer": importer, "parent_id": parent_dir_id})
+							var status : int = _check_file_status(dir.dir + "/" + file_name)
+							if status != FileImportStatus.STATUS_IGNORE:
+								newFiles.append({"file": dir.dir + "/" + file_name, "importer": importer, "parent_id": parent_dir_id, "status": status})
 					else:
 						directories.append({"dir": dir.dir + "/" + file_name, "parent_id": parent_dir_id})
 				file_name = directory.get_next()
 
 	return newFiles
 
+func handle_user_processed_file(file : Dictionary) -> void:
+	_add_to_queue_and_start_thread([file])
+
 # Newly dropped files
 func _files_dropped(files: PoolStringArray, _screen: int) -> void:
-	var newFiles : Array = _build_import_file_list(files)
+	var fileList : Array = _build_import_file_list(files)
 		
 	# No supported files found.
-	if newFiles.empty():
+	if fileList.empty():
 		return
 		
-	# Updates the ui
-	_TotalFilecount += newFiles.size()
-	emit_signal("update_total_import_assets", _TotalFilecount)
+	# Creates to lists, one to import and one which needs approval from the user.
+	var newFiles : Array = []
+	var userCheckFiles : Array = []
+	for file in fileList:
+		if file.status == FileImportStatus.STATUS_OK:
+			newFiles.append(file)
+		else:
+			userCheckFiles.append(file)
 	
+	if !newFiles.empty():
+		# Updates the ui
+		_TotalFilecount += newFiles.size()
+		emit_signal("update_total_import_assets", _TotalFilecount)
+		
+		_add_to_queue_and_start_thread(newFiles)
+	
+	if !userCheckFiles.empty():
+		emit_signal("files_to_check", userCheckFiles)
+
+func _add_to_queue_and_start_thread(files : Array) -> void:
 	# Adds the new files to the queue
 	_QueueLock.lock()
-	_FileQueue.append_array(newFiles)
+	_FileQueue.append_array(files)
 	_QueueLock.unlock()
 
 #	_render_and_index_thread(null)

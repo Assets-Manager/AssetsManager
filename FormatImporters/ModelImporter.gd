@@ -26,5 +26,5 @@ func _import_asset(path : String) -> int:
 		ret = _Directory.rename(path.get_basename() + ".mtl", _Library.build_assets_path(path.get_basename().get_file() + ".mtl"))
 	return ret
 	
-func _render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture:
 	return _Preview.generate(path)
