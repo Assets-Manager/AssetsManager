@@ -80,7 +80,23 @@ func get_assets_path() -> String:
 # Builds the absolute path to the asset library
 func build_assets_path(subpath : String) -> String:
 	return _AssetsPath + "/" + subpath
-	
+
+# As the name says :D
+# Generates the filename in form of DBID_FILENAME.EXT and appends it to the path of the library folder.
+# The old names FILENAME.EXT will be renamed to the new one.
+func generate_and_migrate_assets_path(path : String, id : int) -> String:
+	var filename : String
+	if id != 0:
+		filename = str(id) + "_" + path.get_file()
+		
+		# Migrates the old filename to the new one
+		if !_Directory.file_exists(filename):
+			_Directory.rename(build_assets_path(path.get_file()), build_assets_path(filename))
+	else:
+		filename = str(AssetsDatabase.get_next_asset_id()) + "_" + path.get_file()
+		
+	return build_assets_path(filename)
+
 # Returns the path to the thumbnails directory.
 func get_thumbnail_path() -> String:
 	return _AssetsPath + "/thumbnails"
@@ -129,7 +145,7 @@ func _load_thumbnail(asset : Dictionary) -> Texture:
 			if asset["thumbnail"]:
 				thumbnailpath = get_thumbnail_path() + "/" + asset["thumbnail"]
 			else:	# For images, because they are already images.
-				thumbnailpath = build_assets_path(asset["name"].get_file())
+				thumbnailpath = generate_and_migrate_assets_path(asset["name"].get_file(), asset["id"])
 			
 			var texture : Texture = null
 			if _Directory.file_exists(thumbnailpath):
@@ -177,9 +193,10 @@ func export_assets(directory_id: int, path : String) -> void:
 func export_asset(asset_id: int, path : String) -> void:
 	var asset : Dictionary = AssetsDatabase.get_asset(asset_id)
 	if asset.has("filename"):
-		_Directory.copy(build_assets_path(asset["filename"]), path.replace("\\", "/"))
+		_Directory.copy(generate_and_migrate_assets_path(asset["filename"], asset_id), path.replace("\\", "/"))
 		if asset["filename"].get_extension() == "obj":
-			_Directory.copy(build_assets_path(asset["filename"].get_basename() + ".mtl"), path.replace("\\", "/").get_basename() + ".mtl")
+			var asset_path = generate_and_migrate_assets_path(asset["filename"].get_basename() + ".mtl", asset_id)
+			_Directory.copy(asset_path, asset_path.replace("\\", "/").get_basename())
 
 # ---------------------------------------------
 # 				Add / Update
@@ -247,6 +264,9 @@ func get_asset_thumbnail_by_name(file : String) -> Texture:
 	var asset : Dictionary = AssetsDatabase.get_asset_by_name(file)
 	return _load_thumbnail(asset)
 
+func get_assets_by_name(file : String) -> Array:
+	return AssetsDatabase.get_assets_by_name(file)
+
 # ---------------------------------------------
 # 			    Update / Import
 # ---------------------------------------------
@@ -273,9 +293,18 @@ func _render_and_index_thread(_unused : Object) -> void:
 		_QueueLock.unlock()
 
 		if f.file_exists(file_info.file):
-			# Checks if the asset is already imported
-			var asset_info = AssetsDatabase.get_asset_by_name(file_info.file)
 			var need_import = true
+			var asset_info : Dictionary = {}
+			
+			match file_info.status:
+				FileImportStatus.STATUS_OK:
+					# Checks if the asset is already imported
+					asset_info = AssetsDatabase.get_asset_by_name(file_info.file)
+				
+				FileImportStatus.STATUS_OVERWRITE:
+					if file_info.has("overwrite_id"):	# Only overwrite if the user selected overwrite
+						asset_info = AssetsDatabase.get_asset(file_info.overwrite_id)
+				
 			if !asset_info.empty():
 				var file : File = File.new()
 				

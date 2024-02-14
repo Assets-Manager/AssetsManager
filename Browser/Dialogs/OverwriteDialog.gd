@@ -1,26 +1,53 @@
 extends WindowDialog
 
-signal overwrite()
+signal create_new_asset()
+signal overwrite(id)
 
-onready var _Items := $MarginContainer/VBoxContainer/ItemList
+const CARD = preload("res://Browser/Dialogs/AssetInfoCard.tscn")
 
-func _ready():
-	_Items.add_item("")
-	_Items.add_item("")
-#	_Items.set_item_disabled(0, true)
-#	_Items.set_item_disabled(1, true)
+onready var _NewAsset := $MarginContainer/VBoxContainer/AssetInfoCard
+onready var _Cards := $MarginContainer/VBoxContainer/ScrollContainer/Cards
+onready var _OverwriteBtn := $MarginContainer/VBoxContainer/HBoxContainer/Overwrite
 
-func set_first_element(icon : Texture, title: String) -> void:
-	_Items.set_item_icon(0, icon)
-	_Items.set_item_text(0, title)
+var _SelectedCard = null
 
-func set_second_element(icon : Texture, title: String) -> void:
-	_Items.set_item_icon(1, icon)
-	_Items.set_item_text(1, title)
+# Sets the new asset info
+func set_new_asset(thumb : Texture, text : String) -> void:
+	_NewAsset.thumbnail = thumb
+	_NewAsset.text = text
 
-func _on_Button_pressed():
-	emit_signal("overwrite")
+# Adds adds to the 'Existing assets' list
+func add_asset(id : int, thumb : Texture, text : String) -> void:
+	var tmp := CARD.instance()
+	_Cards.add_child(tmp)
+	tmp.id = id
+	tmp.thumbnail = thumb
+	tmp.text = text
+	tmp.connect("selected", self, "_card_selected", [tmp])
+
+func _clear() -> void:
+	for c in _Cards.get_children():
+		c.queue_free()
+
+func _card_selected(card) -> void:
+	if _SelectedCard:
+		_SelectedCard.selected = false
+	
+	_SelectedCard = card
+	_OverwriteBtn.disabled = false
+
+func _on_New_pressed():
+	emit_signal("create_new_asset")
+	_on_Cancel_pressed()
+
+func _on_Cancel_pressed():
+	# Cleanup
+	_SelectedCard = null
+	_OverwriteBtn.disabled = true
+	_clear()
+	
 	hide()
 
-func _on_Button2_pressed():
-	hide()
+func _on_Overwrite_pressed():
+	emit_signal("overwrite", _SelectedCard.id)
+	_on_Cancel_pressed()

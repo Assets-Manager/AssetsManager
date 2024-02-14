@@ -38,8 +38,8 @@ func import(path: String, update_id : int) -> Dictionary:
 		can_proceed = true
 	
 	if can_proceed:
-		if _import_asset(path) == OK:
-			path = _Library.build_assets_path(path.get_file())
+		if _import_asset(path, update_id) == OK:
+			path = _Library.generate_and_migrate_assets_path(path, update_id)
 			if update_id != 0:
 				if !_Library.update_asset(update_id, path, thumbnail_path.get_file() if thumbnail else null, get_type_id()):
 					return {}
@@ -58,8 +58,8 @@ func _generate_thumbnail_name(path : String) -> String:
 
 # Moves the file into the assets directory.
 # Can be overwritten
-func _import_asset(path : String) -> int:
-	return _Directory.rename(path, _Library.build_assets_path(path.get_file())) 
+func _import_asset(path : String, update_id : int) -> int:
+	return _Directory.rename(path, _Library.generate_and_migrate_assets_path(path, update_id))
 
 # Renders the thumbnail of a given path.
 # Called in sub-thread.

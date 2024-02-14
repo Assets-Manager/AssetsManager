@@ -20,10 +20,10 @@ static func get_extensions() -> Array:
 		"fbx"
 	]
 	
-func _import_asset(path : String) -> int:
-	var ret : int = ._import_asset(path)
+func _import_asset(path : String, update_id : int) -> int:
+	var ret : int = ._import_asset(path, update_id)
 	if (ret == OK) && (path.get_extension().to_lower() == "obj"):
-		ret = _Directory.rename(path.get_basename() + ".mtl", _Library.build_assets_path(path.get_basename().get_file() + ".mtl"))
+		ret = _Directory.rename(path.get_basename() + ".mtl", _Library.generate_and_migrate_assets_path(path.get_basename().get_file() + ".mtl", update_id))
 	return ret
 	
 func render_thumbnail(path: String) -> Texture:

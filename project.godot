@@ -9,6 +9,11 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "HBoxContainer",
+"class": "AssetInfoCard",
+"language": "GDScript",
+"path": "res://Browser/Dialogs/AssetInfoCard.gd"
+}, {
 "base": "WindowDialog",
 "class": "CustomFileDialog",
 "language": "GDScript",
@@ -75,6 +80,7 @@ _global_script_classes=[ {
 "path": "res://3DEditor/SpatialUtils.gd"
 } ]
 _global_script_class_icons={
+"AssetInfoCard": "",
 "CustomFileDialog": "",
 "DirectoryWatcher": "",
 "FileDialogConfig": "",

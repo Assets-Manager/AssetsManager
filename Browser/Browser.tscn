@@ -199,6 +199,7 @@ margin_bottom = 33.0
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="OverwriteDialog" parent="CanvasLayer" instance=ExtResource( 18 )]
+visible = false
 
 [node name="DirectoryMoveDialog" parent="CanvasLayer" instance=ExtResource( 10 )]
 popup_exclusive = true
@@ -244,6 +245,7 @@ script = ExtResource( 8 )
 [connection signal="item_rect_changed" from="ScrollContainer" to="ScrollContainer" method="_on_item_rect_changed"]
 [connection signal="pressed" from="MarginContainer2/HBoxContainer/CloseLib" to="." method="_on_CloseLib_pressed"]
 [connection signal="page_update" from="MarginContainer2/HBoxContainer/Pagination" to="." method="_on_Pagination_page_update"]
+[connection signal="create_new_asset" from="CanvasLayer/OverwriteDialog" to="." method="_on_OverwriteDialog_create_new_asset"]
 [connection signal="overwrite" from="CanvasLayer/OverwriteDialog" to="." method="_on_OverwriteDialog_overwrite"]
 [connection signal="popup_hide" from="CanvasLayer/OverwriteDialog" to="." method="_on_OverwriteDialog_popup_hide"]
 [connection signal="move_item" from="CanvasLayer/DirectoryMoveDialog" to="." method="_on_DirectoryMoveDialog_move_item"]

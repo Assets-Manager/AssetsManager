@@ -24,6 +24,20 @@ func close() -> void:
 # 					Queries
 # ---------------------------------------------
 
+# Gets the next autoincrement id in sequence of the sqlite table assets
+# Dangerous: The would destroy the complete naming logic, if any asset
+# would be inserted from another importer thread.
+# This seems very hacky
+func get_next_asset_id() -> int:
+	var result : int = 0
+	if _DB:
+		_Lock.lock()
+		if _DB.query("SELECT seq FROM sqlite_sequence WHERE name = 'assets'"):
+			result = _DB.query_result[0].seq
+		_Lock.unlock()
+		
+	return result
+
 # Gets a list of all directories, ordered by parent.
 func get_all_directories() -> Array:
 	var result : Array = []
@@ -93,6 +107,17 @@ func get_asset_by_name(path : String) -> Dictionary:
 		if _DB.query_with_bindings("SELECT * from assets WHERE filename = ?", [path.get_file()]):
 			if !_DB.query_result.empty():
 				result = _DB.query_result[0]
+		_Lock.unlock()
+		
+	return result
+	
+func get_assets_by_name(path : String) -> Array:
+	var result : Array = []
+	if _DB:
+		_Lock.lock()
+		if _DB.query_with_bindings("SELECT * from assets WHERE filename = ?", [path.get_file()]):
+			if !_DB.query_result.empty():
+				result = _DB.query_result
 		_Lock.unlock()
 		
 	return result

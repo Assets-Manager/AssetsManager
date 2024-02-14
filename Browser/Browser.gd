@@ -55,10 +55,14 @@ func _process(delta):
 				if !_Thumbnail:
 					_ThumbnailThread = Thread.new()
 					_ThumbnailThread.start(self, "_render_thumbnail", file)
-					print("START")
 				else:
-					_OverwriteDialog.set_first_element(_Thumbnail, tr("NEW") + " - " + file.file.get_file())
-					_OverwriteDialog.set_second_element(AssetsLibrary.get_asset_thumbnail_by_name(file.file.get_file()), tr("OLD") + " - " + file.file.get_file())
+					_OverwriteDialog.set_new_asset(_Thumbnail, file.file.get_file())
+					
+					# Gets a list with all assets, which shares the same name
+					var assets = AssetsLibrary.get_assets_by_name(file.file)
+					for asset in assets:	# Add them to the dialog
+						_OverwriteDialog.add_asset(asset.id, AssetsLibrary.get_asset_thumbnail_by_name(asset.filename), asset.filename)
+					
 					_OverwriteDialog.popup_centered()
 					_Thumbnail = null
 
@@ -319,8 +323,16 @@ func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN
 
 # Handles the users will to overwrite an asset
-func _on_OverwriteDialog_overwrite():
+func _on_OverwriteDialog_overwrite(id : int):
+	var new_asset = _FilesToApprove.back()
+	new_asset["overwrite_id"] = id
+	
+	AssetsLibrary.handle_user_processed_file(new_asset)
+
+# Creates the newly dropped asset as duplicate
+func _on_OverwriteDialog_create_new_asset():
 	AssetsLibrary.handle_user_processed_file(_FilesToApprove.back())
 
+# Removes the approved file
 func _on_OverwriteDialog_popup_hide():
 	_FilesToApprove.pop_back()
