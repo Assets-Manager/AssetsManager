@@ -27,13 +27,18 @@ var _Thumbnail : Texture = null
 var _ThumbnailThread : Thread = null
 
 func _ready() -> void:
+	# Connects all events of the library.
 	AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
 	AssetsLibrary.connect("files_to_check", self, "_files_to_check")
+	
+	# IMPORTANT: These MUST be called deferred, since this signals are emitted inside a thread.
 	AssetsLibrary.connect("new_asset_added", self, "_new_asset_added", [], CONNECT_DEFERRED)
 	AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
 	
+	# Updates the initial pagination
 	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 	
+	# Does the user already did the tutorial?
 	if ProgramManager.settings.tutorial_step < ProgramManager.settings.TutorialStep.BROWSER_SCREEN:
 		_GodotTour.visible = true
 		_GodotTour.start()
@@ -45,31 +50,33 @@ func _ready() -> void:
 # ---------------------------------------------
 
 func _process(delta):
+	# Is a render thread running?
+	# If so than wait for it to finish.
 	if _ThumbnailThread && !_ThumbnailThread.is_alive():
 		_Thumbnail = _ThumbnailThread.wait_to_finish()
 		_ThumbnailThread = null
-	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.empty() && !_OverwriteDialog.visible:
-		var file : Dictionary = _FilesToApprove.back()
+	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.empty() && \
+		 !_OverwriteDialog.visible:
+		var file : Dictionary = _FilesToApprove.pop_back() # This is faster than pop_front
 		match file.status:
 			AssetsLibrary.FileImportStatus.STATUS_OVERWRITE:
+				# Starts a new render thread, if there is currently no thumnail available.
 				if !_Thumbnail:
 					_ThumbnailThread = Thread.new()
 					_ThumbnailThread.start(self, "_render_thumbnail", file)
 				else:
-					_OverwriteDialog.set_new_asset(_Thumbnail, file.file.get_file())
-					
-					# Gets a list with all assets, which shares the same name
-					var assets = AssetsLibrary.get_assets_by_name(file.file)
-					for asset in assets:	# Add them to the dialog
-						_OverwriteDialog.add_asset(asset.id, AssetsLibrary.get_asset_thumbnail_by_name(asset.filename), asset.filename)
-					
+					# Sets the newly dropped asset for the dialog
+					_OverwriteDialog.set_new_asset(_Thumbnail, file)
 					_OverwriteDialog.popup_centered()
 					_Thumbnail = null
 
+# Renders the thumnail. Since some importers only work on the main thread,
+# this one must be called outside of the main thread, to avoid locking.
 func _render_thumbnail(file) -> Texture:
 	return file.importer.render_thumbnail(file.file)
 
 func _exit_tree() -> void:
+	# Wait for the renderthread to finish, before the programm is closed.
 	if _ThumbnailThread:
 		_ThumbnailThread.wait_to_finish()
 
@@ -205,7 +212,7 @@ func _card_pressed(id: int, is_dir : bool) -> void:
 func _export_assets(id: int, is_dir : bool) -> void:
 	if !is_dir:	# Export one asset file
 		_NativeDialog.dialog_type = 1
-		var asset : Dictionary = AssetsDatabase.get_asset(id)
+		var asset : Dictionary = AssetsLibrary.get_asset_by_id(id)
 		if asset.has("filename"):
 			_NativeDialog.initial_path = asset["filename"]
 			var file : PoolStringArray = _NativeDialog.show_modal()
@@ -321,18 +328,3 @@ func _on_CloseLib_pressed() -> void:
 
 func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN
-
-# Handles the users will to overwrite an asset
-func _on_OverwriteDialog_overwrite(id : int):
-	var new_asset = _FilesToApprove.back()
-	new_asset["overwrite_id"] = id
-	
-	AssetsLibrary.handle_user_processed_file(new_asset)
-
-# Creates the newly dropped asset as duplicate
-func _on_OverwriteDialog_create_new_asset():
-	AssetsLibrary.handle_user_processed_file(_FilesToApprove.back())
-
-# Removes the approved file
-func _on_OverwriteDialog_popup_hide():
-	_FilesToApprove.pop_back()

@@ -14,6 +14,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Browser/Dialogs/AssetInfoCard.gd"
 }, {
+"base": "Reference",
+"class": "AssetsDatabase",
+"language": "GDScript",
+"path": "res://Filesystem/AssetsDatabase.gd"
+}, {
 "base": "WindowDialog",
 "class": "CustomFileDialog",
 "language": "GDScript",
@@ -81,6 +86,7 @@ _global_script_classes=[ {
 } ]
 _global_script_class_icons={
 "AssetInfoCard": "",
+"AssetsDatabase": "",
 "CustomFileDialog": "",
 "DirectoryWatcher": "",
 "FileDialogConfig": "",
@@ -108,7 +114,6 @@ config/version="1.0.0"
 
 [autoload]
 
-AssetsDatabase="*res://Filesystem/AssetsDatabase.gd"
 AssetsLibrary="*res://Filesystem/AssetsLibrary.gd"
 ProgramManager="*res://ProgramManager.gd"
 

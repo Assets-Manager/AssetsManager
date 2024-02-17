@@ -25,6 +25,9 @@ func _ready() -> void:
 
 func open(path : String) -> void:
 	_DirWatcher.open(path)
+	
+func close() -> void:
+	_DirWatcher.close()
 
 func _file_changed(path : String, event : int) -> void:
 	if (path.begins_with("thumbnail") || (supported_extensions.find(path.get_extension().to_lower()) == -1)) || paused:

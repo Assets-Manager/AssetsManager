@@ -60,7 +60,7 @@ margin_right = 427.0
 margin_bottom = 293.0
 
 [node name="Overwrite" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
-margin_right = 139.0
+margin_right = 103.0
 margin_bottom = 33.0
 hint_tooltip = "Overwrites the selected asset."
 size_flags_horizontal = 3
@@ -68,15 +68,24 @@ disabled = true
 text = "Overwrite"
 
 [node name="New" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
-margin_left = 143.0
-margin_right = 283.0
+margin_left = 107.0
+margin_right = 211.0
 margin_bottom = 33.0
 hint_tooltip = "Creates a new asset in the database, regardless if it already exists."
 size_flags_horizontal = 3
 text = "New"
 
+[node name="Link" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+margin_left = 215.0
+margin_right = 319.0
+margin_bottom = 33.0
+hint_tooltip = "Links the selected asset with this folder."
+size_flags_horizontal = 3
+disabled = true
+text = "Link"
+
 [node name="Cancel" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
-margin_left = 287.0
+margin_left = 323.0
 margin_right = 427.0
 margin_bottom = 33.0
 size_flags_horizontal = 3
@@ -84,4 +93,5 @@ text = "Cancel"
 
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Overwrite" to="." method="_on_Overwrite_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/New" to="." method="_on_New_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Link" to="." method="_on_Link_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Cancel" to="." method="_on_Cancel_pressed"]

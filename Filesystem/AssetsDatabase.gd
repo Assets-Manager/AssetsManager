@@ -1,4 +1,5 @@
-extends Node
+class_name AssetsDatabase
+extends Reference
 
 const SQLITE = preload("res://addons/godot-sqlite/godot-sqlite-wrapper.gd")
 
@@ -12,7 +13,7 @@ func open(path : String) -> bool:
 	_DB.path = path
 	_DB.foreign_keys = true
 	if _DB.open_db():
-		return _migrate()	# Starts a migration of the database
+		return _migrate()	# Starts the migration of the database
 		
 	return false
 
@@ -21,308 +22,56 @@ func close() -> void:
 	_DB.close_db()
 
 # ---------------------------------------------
-# 					Queries
+# 				Query functions
 # ---------------------------------------------
 
-# Gets the next autoincrement id in sequence of the sqlite table assets
-# Dangerous: The would destroy the complete naming logic, if any asset
-# would be inserted from another importer thread.
-# This seems very hacky
-func get_next_asset_id() -> int:
-	var result : int = 0
-	if _DB:
-		_Lock.lock()
-		if _DB.query("SELECT seq FROM sqlite_sequence WHERE name = 'assets'"):
-			result = _DB.query_result[0].seq
-		_Lock.unlock()
-		
-	return result
-
-# Gets a list of all directories, ordered by parent.
-func get_all_directories() -> Array:
+# Starts a query, with parameters.
+# This function is thread safe.
+func query_with_bindings(query: String, bindings: Array) -> Array:
 	var result : Array = []
 	if _DB:
 		_Lock.lock()
-		if _DB.query("SELECT * FROM directories ORDER BY parent_id"):
-			result = _DB.query_result
-		_Lock.unlock()
-		
-	return result
-
-# Gets the parent of a directory
-func get_parent_dir_id(directoryId: int) -> int:
-	if _DB:
-		_Lock.lock()
-		var result : Array = _DB.select_rows("directories", "id = " + str(directoryId), ["parent_id"])
-		_Lock.unlock()
-		if !result.empty():
-			return result[0].parent_id if result[0].parent_id != null else 0
-		
-	return 0
-	
-func get_asset_parent_dir_ids(assetId: int) -> Array:
-	if _DB:
-		_Lock.lock()
-		var result : Array = _DB.select_rows("asset_directory_rel", "ref_assets_id = " + str(assetId), ["ref_directory_id"])
-		_Lock.unlock()
-		if !result.empty():
-			var ret : Array = []
-			for id in result:
-				if id.ref_directory_id != null:
-					ret.append(id.ref_directory_id)
-			
-			return ret
-		
-	return []
-
-# Gets the name of a directory.
-func get_dir_name(directory_id : int) -> String:
-	var result : String = ""
-	if _DB:
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT name FROM directories WHERE id = ?", [directory_id]):
-			if !_DB.query_result.empty():
-				result = _DB.query_result[0].name
-		_Lock.unlock()
-		
-	return result
-
-# Gets all assets and diretories of a directory.
-func get_assets(directory_id : int) -> Dictionary:
-	var result : Dictionary = {}
-	if _DB:
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT id, name FROM directories WHERE parent_id = ?", [directory_id]):
-			result["subdirectories"] = _DB.query_result
-		
-		if _DB.query_with_bindings("SELECT a.id, a.filename as name, a.thumbnail FROM assets as a LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?) WHERE a.id = b.ref_assets_id", [directory_id]):
-			result["assets"] = _DB.query_result
-		_Lock.unlock()
-	return result
-
-func get_asset_by_name(path : String) -> Dictionary:
-	var result : Dictionary = {}
-	if _DB:
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT * from assets WHERE filename = ?", [path.get_file()]):
-			if !_DB.query_result.empty():
-				result = _DB.query_result[0]
-		_Lock.unlock()
-		
-	return result
-	
-func get_assets_by_name(path : String) -> Array:
-	var result : Array = []
-	if _DB:
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT * from assets WHERE filename = ?", [path.get_file()]):
-			if !_DB.query_result.empty():
-				result = _DB.query_result
-		_Lock.unlock()
-		
-	return result
-	
-func get_asset(asset_id : int) -> Dictionary:
-	var result : Dictionary = {}
-	if _DB:
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT * from assets WHERE id = ?", [asset_id]):
-			if !_DB.query_result.empty():
-				result = _DB.query_result[0]
-		_Lock.unlock()
-	return result
-
-func get_directory_id(parentId : int, name : String) -> int:
-	var result : int = 0
-	if _DB:
-		var bindings : Array = [name]
-		var query = "parent_id IS NULL"
-		if parentId != 0:
-			query = "parent_id = ?"
-			bindings.push_front(parentId)
-		
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT id FROM directories WHERE %s AND name = ?" % query, bindings):
-			if !_DB.query_result.empty():
-				result = _DB.query_result[0].id
-		_Lock.unlock()
-			
-	return result
-
-# Returns the total numbers of assets for a given search in a directory.
-func get_assets_count(directoryId : int, search : String) -> int:
-	if _DB:
-		var count : int = 0
-		var query : String = "SELECT COUNT(a.id) as count FROM assets as a"
-		var bindings : Array = []
-		
-		# Search all files and directories inside of the given directory
-		if directoryId != 0:
-			query += " LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?) WHERE a.id = b.ref_assets_id AND a.filename LIKE ?"
-			bindings = [directoryId, '%' + search + '%']
-		else:
-			# The root directory allows for a global search
-			if search.empty():
-				query += " LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id) WHERE b.ref_directory_id IS NULL"
-			else:
-				query += " WHERE a.filename LIKE ?"
-				bindings.append('%' + search + '%')
-		
-		_Lock.lock()
-		if _DB.query_with_bindings(query, bindings):
-			count = _DB.query_result_by_reference[0].count
-		
-		if _DB.query_with_bindings("SELECT COUNT(id) as count FROM directories WHERE parent_id = ? AND name LIKE ?", [null if directoryId == 0 else directoryId, '%' + search + '%']):
-			count += _DB.query_result_by_reference[0].count
-		_Lock.unlock()
-		
-		return count
-	return 0
-
-# Returns a list of directories and assets which matches the search criteria.
-func query_assets(directoryId : int, search: String, skip: int, count: int) -> Array:
-	if _DB:
-		var result : Array = []
-		var bindings : Array = ['%' + search + '%', skip, count]
-		
-		# Builds the query for the directories.
-		var query = "SELECT id, name, parent_id FROM directories WHERE %s name LIKE ? LIMIT ?, ?"
-		if directoryId != 0:
-			query = query % "parent_id = ? AND"
-			bindings.push_front(directoryId)
-		else:
-			# The root directory allows for a global search
-			if search.empty():
-				query = query % "parent_id IS NULL AND"
-			else:
-				query = query % ""
-		
-		_Lock.lock()
-		# Query all directories.
 		if _DB.query_with_bindings(query, bindings):
 			result = _DB.query_result
-			
-		# There is room for more
-		if result.size() < count:
-			if result.empty():
-				# Create some sort of relative skip, since the directories are in a different table.
-				if _DB.query("SELECT COUNT(1) as count from directories"):
-					skip -= _DB.query_result_by_reference[0].count
-			else:
-				skip = 0
-			
-			bindings = ['%' + search + '%', skip, count - result.size()]
-			query = "SELECT a.id, a.filename as name, a.thumbnail %s FROM assets as a %s WHERE %s a.filename LIKE ? LIMIT ?, ?"
-			if directoryId != 0:
-				query = query % ["", "LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id = ?)", "a.id = b.ref_assets_id AND"]
-				bindings.push_front(directoryId)
-			else:
-				# The root directory allows for a global search
-				if search.empty():
-					query = query % ["", "LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", "b.ref_directory_id IS NULL AND"]
-				else:	# For open containing folder.
-					query = query % [", b.ref_directory_id as parent_id", "LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", ""]
-		
-			# Query all assets.
-			if _DB.query_with_bindings(query, bindings):
-				result.append_array(_DB.query_result)
-
-		_Lock.unlock()
-
-		return result
-	return []
-
-# ---------------------------------------------
-# 					Move
-# ---------------------------------------------
-
-# Moves a diretory to a another one.
-func move_directory(parent_id : int, child_id : int) -> bool:
-	var result : bool = false
-	if _DB:
-		_Lock.lock()
-		if _DB.query_with_bindings("SELECT name FROM directories WHERE id = ?", [child_id]):
-			if !_DB.query_result_by_reference.empty():
-				if _DB.query_with_bindings("SELECT id FROM directories WHERE parent_id = ? AND name = ?", [parent_id, _DB.query_result_by_reference[0].name]):
-					if _DB.query_result_by_reference.empty():
-						result = _DB.update_rows("directories", "id=" + str(child_id), {"parent_id": null if parent_id == 0 else parent_id})
-		_Lock.unlock()
-	return result
-
-# Moves an asset to a another directory.
-func move_asset(parent_id : int, asset_id : int) -> bool:
-	var result : bool = false
-	if _DB:
-		_Lock.lock()
-		if _DB.delete_rows("asset_directory_rel", "ref_assets_id=" + str(asset_id)):
-			if parent_id != 0:
-				result = _DB.insert_row("asset_directory_rel", {'ref_assets_id': asset_id, "ref_directory_id": parent_id})
-			result = true
-		_Lock.unlock()
-	return result
-
-# ---------------------------------------------
-# 					Delete
-# ---------------------------------------------
-
-# Delete a diretory
-func delete_directory(directoryId: int) -> bool:
-	var result : bool = false
-	if _DB:
-		_Lock.lock()
-		result = _DB.delete_rows("directories", "id=" + str(directoryId))
 		_Lock.unlock()
 		
 	return result
 
-# ---------------------------------------------
-# 					Update
-# ---------------------------------------------
-
-func get_or_add_asset_type(name : String) -> int:
-	var id : int = 0
-	if _DB:
-		_Lock.unlock()
-		if _DB.query_with_bindings("SELECT id FROM asset_types WHERE name = ?", [name]):
-			if !_DB.query_result.empty():
-				id = _DB.query_result[0].id
-			else:
-				if _DB.insert_row("asset_types", {"name": name}):
-					id = _DB.db.last_insert_rowid
-		_Lock.unlock()
-		
-	return id
-
-func create_directory(parentId : int, name : String) -> int:
-	var result : int = 0
-	if _DB:
-		_Lock.lock()
-		if _DB.insert_row("directories", {"name": name, "parent_id": null if parentId == 0 else parentId}):
-			result = _DB.db.last_insert_rowid
-		_Lock.unlock()
-			
-	return result
-
-func update_asset(id : int, path: String, thumbnailName, type) -> bool:
+# Inserts a new row into a given table. The data need to be key(Column) value.
+# This function is thread safe.
+# Returns true on success.
+func insert(table: String, data: Dictionary) -> bool:
 	var result : bool = false
 	if _DB:
-		var file : File = File.new()
-		var modified : int = file.get_modified_time(path)
 		_Lock.lock()
-		result = _DB.update_rows("assets", "id=" + str(id), {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName})
+		result = _DB.insert_row(table, data)
 		_Lock.unlock()
 	return result
 
-func add_asset(path: String, thumbnailName, type) -> int:
-	var result : int = 0
+# Updates all data which meets the condition.
+# This function is thread safe.
+# Returns true on success.
+func update(table: String, condition: String, data: Dictionary) -> bool:
+	var result : bool = false
 	if _DB:
-		var file : File = File.new()
-		var modified : int = file.get_modified_time(path)
 		_Lock.lock()
-		if _DB.insert_row("assets", {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName}):
-			result = _DB.db.last_insert_rowid
+		result = _DB.update_rows(table, condition, data)
 		_Lock.unlock()
 	return result
+
+# Deletes all data which meets the condition.
+# This function is thread safe.
+# Returns true on success.
+func delete(table: String, condition: String) -> bool:
+	var result : bool = false
+	if _DB:
+		_Lock.lock()
+		result = _DB.delete_rows(table, condition)
+		_Lock.unlock()
+	return result
+
+func get_last_insert_rowid() -> int:
+	return _DB.db.last_insert_rowid
 
 # ---------------------------------------------
 # 				  Migration
