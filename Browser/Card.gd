@@ -6,12 +6,16 @@ signal export_assets(id, is_dir)
 signal move_to_directory_pressed(id, is_dir)
 signal asset_dropped(id, dopped_id, dropped_is_dir)
 signal open_containing_folder(parent_folder)
+signal remove_link(id)
+signal show_links(id)
 
 onready var _Texture := $Card/MarginContainer/VBoxContainer/TextureRect
 onready var _Title := $Card/MarginContainer/VBoxContainer/Title
 onready var _Animation := $AnimationPlayer
 onready var _Delete := $Card/HBoxContainer/Delete
 onready var _OpenFolder := $Card/HBoxContainer/OpenFolder
+onready var _ShowLinks := $Card/HBoxContainer2/ShowLinks
+onready var _RemoveLink := $Card/HBoxContainer2/RemoveLink
 
 var id : int = 0
 var is_dir : bool = false setget set_is_dir
@@ -29,6 +33,9 @@ func set_is_dir(value : bool) -> void:
 	is_dir = value
 	_Delete.visible = is_dir
 	mouse_default_cursor_shape = Control.CURSOR_MOVE if !is_dir else Control.CURSOR_POINTING_HAND
+
+	_ShowLinks.visible = (AssetsLibrary.get_asset_linked_dirs(id).size() > 1) && !value
+	_RemoveLink.visible = (AssetsLibrary.current_directory != 0) && !value
 
 func set_texture(texture : Texture) -> void:
 	_Texture.texture = texture
@@ -79,3 +86,9 @@ func _on_OpenFolder_pressed() -> void:
 
 func _on_Move_pressed() -> void:
 	emit_signal("move_to_directory_pressed", id, is_dir)
+
+func _on_RemoveLink_pressed():
+	emit_signal("remove_link", id)
+
+func _on_ShowLinks_pressed():
+	emit_signal("show_links", id)

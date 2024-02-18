@@ -1,10 +1,12 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://Browser/Card.gd" type="Script" id=1]
 [ext_resource path="res://Assets/Material Icons/delete.svg" type="Texture" id=2]
 [ext_resource path="res://Assets/Material Icons/save.svg" type="Texture" id=3]
 [ext_resource path="res://Assets/Material Icons/folder_open.svg" type="Texture" id=4]
 [ext_resource path="res://Assets/Material Icons/drive_file_move.svg" type="Texture" id=5]
+[ext_resource path="res://Assets/Material Icons/link_off.svg" type="Texture" id=6]
+[ext_resource path="res://Assets/Material Icons/link.svg" type="Texture" id=7]
 
 [sub_resource type="Animation" id=1]
 resource_name = "Hover"
@@ -38,7 +40,7 @@ tracks/0/keys = {
 }
 
 [node name="Card" type="MarginContainer"]
-rect_min_size = Vector2( 192, 192 )
+rect_min_size = Vector2( 200, 200 )
 rect_pivot_offset = Vector2( 96, 96 )
 focus_mode = 1
 mouse_default_cursor_shape = 2
@@ -51,8 +53,8 @@ script = ExtResource( 1 )
 [node name="Card" type="Panel" parent="."]
 margin_left = 8.0
 margin_top = 8.0
-margin_right = 184.0
-margin_bottom = 184.0
+margin_right = 192.0
+margin_bottom = 192.0
 mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Card"]
@@ -68,23 +70,23 @@ custom_constants/margin_bottom = 16
 [node name="VBoxContainer" type="VBoxContainer" parent="Card/MarginContainer"]
 margin_left = 16.0
 margin_top = 16.0
-margin_right = 160.0
-margin_bottom = 160.0
+margin_right = 168.0
+margin_bottom = 168.0
 rect_clip_content = true
 mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="Card/MarginContainer/VBoxContainer"]
-margin_right = 144.0
-margin_bottom = 117.0
+margin_right = 152.0
+margin_bottom = 125.0
 mouse_filter = 2
 size_flags_vertical = 3
 expand = true
 stretch_mode = 6
 
 [node name="Title" type="Label" parent="Card/MarginContainer/VBoxContainer"]
-margin_top = 121.0
-margin_right = 144.0
-margin_bottom = 144.0
+margin_top = 129.0
+margin_right = 152.0
+margin_bottom = 152.0
 rect_clip_content = true
 text = "Test"
 clip_text = true
@@ -117,14 +119,14 @@ expand_icon = true
 
 [node name="Control" type="Control" parent="Card/HBoxContainer"]
 margin_left = 74.0
-margin_right = 102.0
+margin_right = 110.0
 margin_bottom = 33.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="Move" type="ToolButton" parent="Card/HBoxContainer"]
-margin_left = 106.0
-margin_right = 139.0
+margin_left = 114.0
+margin_right = 147.0
 margin_bottom = 33.0
 rect_min_size = Vector2( 33, 33 )
 hint_tooltip = "Move to another directory"
@@ -134,13 +136,46 @@ icon_align = 1
 expand_icon = true
 
 [node name="OpenFolder" type="ToolButton" parent="Card/HBoxContainer"]
-margin_left = 143.0
-margin_right = 176.0
+margin_left = 151.0
+margin_right = 184.0
 margin_bottom = 33.0
 rect_min_size = Vector2( 33, 33 )
 hint_tooltip = "Open containing folder"
 mouse_default_cursor_shape = 2
 icon = ExtResource( 4 )
+icon_align = 1
+expand_icon = true
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Card"]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -33.0
+
+[node name="Control" type="Control" parent="Card/HBoxContainer2"]
+margin_right = 110.0
+margin_bottom = 33.0
+size_flags_horizontal = 3
+
+[node name="ShowLinks" type="ToolButton" parent="Card/HBoxContainer2"]
+margin_left = 114.0
+margin_right = 147.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+hint_tooltip = "Shows all linked directories of this asset."
+mouse_default_cursor_shape = 2
+icon = ExtResource( 7 )
+icon_align = 1
+expand_icon = true
+
+[node name="RemoveLink" type="ToolButton" parent="Card/HBoxContainer2"]
+margin_left = 151.0
+margin_right = 184.0
+margin_bottom = 33.0
+rect_min_size = Vector2( 33, 33 )
+hint_tooltip = "Remove link to this directory."
+mouse_default_cursor_shape = 2
+icon = ExtResource( 6 )
 icon_align = 1
 expand_icon = true
 
@@ -155,3 +190,5 @@ anims/RESET = SubResource( 2 )
 [connection signal="pressed" from="Card/HBoxContainer/Export" to="." method="_on_Export_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer/Move" to="." method="_on_Move_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer/OpenFolder" to="." method="_on_OpenFolder_pressed"]
+[connection signal="pressed" from="Card/HBoxContainer2/ShowLinks" to="." method="_on_ShowLinks_pressed"]
+[connection signal="pressed" from="Card/HBoxContainer2/RemoveLink" to="." method="_on_RemoveLink_pressed"]

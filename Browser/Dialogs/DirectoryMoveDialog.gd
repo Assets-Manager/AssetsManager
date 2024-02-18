@@ -1,11 +1,13 @@
 extends WindowDialog
 
 signal move_item(parent_id, id, is_dir)
+signal refresh_ui()
 
 const FOLDER_ICON = preload("res://Assets/Material Icons/folder.svg")
 
 onready var _Tree := $MarginContainer/VBoxContainer/Tree
 onready var _MoveButton := $MarginContainer/VBoxContainer/HBoxContainer/Move
+onready var _LinkButton := $MarginContainer/VBoxContainer/HBoxContainer/Link
 
 var _Root : TreeItem
 var _Selected : TreeItem
@@ -33,6 +35,7 @@ func show_dialog(id : int, is_dir : bool) -> void:
 	_Id = id
 	_IsDir = is_dir
 	_MoveButton.disabled = true
+	_LinkButton.disabled = true
 	
 	while _Root.get_children():
 		_Root.remove_child(_Root.get_children())
@@ -59,8 +62,14 @@ func _on_Cancel_pressed() -> void:
 
 func _on_Tree_item_selected() -> void:
 	_Selected = _Tree.get_selected()
-	_MoveButton.disabled = _Selected == null
+	_MoveButton.disabled = (_Selected == null) || (_Selected.get_metadata(0) == 0) || AssetsLibrary.is_asset_in_dir(_Id, _Selected.get_metadata(0))
+	_LinkButton.disabled = (_Selected == null) || (_Selected.get_metadata(0) == 0) || AssetsLibrary.is_asset_in_dir(_Id, _Selected.get_metadata(0))
 
 func _on_Move_pressed() -> void:
 	emit_signal("move_item", _Selected.get_metadata(0), _Id, _IsDir)
+	hide()
+
+func _on_Link_pressed():
+	AssetsLibrary.link_asset(_Selected.get_metadata(0), _Id)
+	emit_signal("refresh_ui")
 	hide()

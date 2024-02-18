@@ -18,6 +18,7 @@ onready var _NativeDialog := $NativeDialog
 onready var _InfoDialog := $CanvasLayer/InfoDialog
 onready var _GodotTour := $CanvasLayer/GodotTour
 onready var _OverwriteDialog := $CanvasLayer/OverwriteDialog
+onready var _AssetLinksDialog := $CanvasLayer/AssetLinksDialog
 
 var _DirectoryToDelete : int = -1
 var _VisibleCards : int = 0
@@ -197,6 +198,14 @@ func _on_Pagination_page_update(page : int) -> void:
 func _move_to_directory_pressed(id: int, is_dir : bool) -> void:
 	_DirectoryMoveDialog.show_dialog(id, is_dir)
 	
+func _show_links(id: int) -> void:
+	_AssetLinksDialog.set_asset_id(id)
+	_AssetLinksDialog.popup_centered()
+	
+func _remove_link(id: int) -> void:
+	if AssetsLibrary.unlink_asset(AssetsLibrary.current_directory, id):
+		_card_pressed(AssetsLibrary.current_directory, true)
+	
 func _card_pressed(id: int, is_dir : bool) -> void:
 	# Opens the pressed directory.
 	if is_dir:
@@ -244,6 +253,9 @@ func _asset_dropped(id : int, dopped_id : int, dropped_is_dir : bool) -> void:
 func _on_DirectoryMoveDialog_move_item(parent_id: int, id: int, is_dir: bool) -> void:
 	_asset_dropped(parent_id, id, is_dir)
 
+func _on_DirectoryMoveDialog_refresh_ui():
+	_card_pressed(AssetsLibrary.current_directory, true)
+
 # ---------------------------------------------
 # 	   Different ui actions and functions
 # ---------------------------------------------
@@ -257,6 +269,8 @@ func _create_card():
 	card.connect("export_assets", self, "_export_assets")
 	card.connect("open_containing_folder", self, "_card_pressed", [true])
 	card.connect("move_to_directory_pressed", self, "_move_to_directory_pressed")
+	card.connect("remove_link", self, "_remove_link")
+	card.connect("show_links", self, "_show_links")
 	return card
 
 # Shows the name dialog for a new directory.
@@ -328,3 +342,6 @@ func _on_CloseLib_pressed() -> void:
 
 func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN
+
+func _on_AssetLinksDialog_popup_hide():
+	_card_pressed(AssetsLibrary.current_directory, true)
