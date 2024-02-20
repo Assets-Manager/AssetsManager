@@ -15,7 +15,14 @@ func set_asset_id(id : int) -> void:
 	
 	var dirs := AssetsLibrary.get_asset_linked_dirs(_AssetId)
 	for dir in dirs:
-		_Directories.add_item(dir.name, FOLDER_ICON)
+		# Builds the dir path
+		var path = dir.name
+		var parent_dir := AssetsLibrary.get_parent_dir(dir.id)
+		while !parent_dir.empty():
+			path = parent_dir.name + "/" + path
+			parent_dir = AssetsLibrary.get_parent_dir(parent_dir.id)
+		
+		_Directories.add_item("/" + path, FOLDER_ICON)
 		_Directories.set_item_metadata(_Directories.get_item_count() - 1, dir.id)
 
 func _reset() -> void:

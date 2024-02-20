@@ -10,8 +10,6 @@ signal files_to_check(files)
 
 enum FileImportStatus {
 	STATUS_OK,
-	STATUS_IGNORE,
-	STATUS_DUPLICATE,
 	STATUS_OVERWRITE
 }
 
@@ -25,6 +23,9 @@ var _Directory : Directory = Directory.new()
 var _File : File = File.new()
 var _Importers : Dictionary = {}
 var _AssetsDatabase: AssetsDatabase = AssetsDatabase.new()
+
+# Needed to track duplicates in currently dropped files.
+var _CurrentImportingFilename : Dictionary = {}
 
 var current_directory : int = 0
 onready var _DirWatcher : DirectoryWatcher = DirectoryWatcher.new()
@@ -121,16 +122,30 @@ func get_assets_path() -> String:
 func generate_and_migrate_assets_path(path : String, id : int) -> String:
 	var filename : String
 	if id != 0:
-		filename = str(id) + "_" + path.get_file()
-		
-		# Migrates the old filename to the new one
-		if !_Directory.file_exists(_build_assets_path(filename)):
-			_Directory.rename(_build_assets_path(path.get_file()), _build_assets_path(filename))
+		var decoded_file := decode_asset_name(path)
+		if decoded_file.empty() || (decoded_file[0] != id):
+			filename = str(id) + "_" + path.get_file()
+			
+			# Migrates the old filename to the new one
+			if !_Directory.file_exists(_build_assets_path(filename)):
+				_Directory.rename(_build_assets_path(path.get_file()), _build_assets_path(filename))
+		else:	# The file is already imported and encoded.
+			filename = path.get_file()
 	else:
 		var result = _AssetsDatabase.query_with_bindings("SELECT seq FROM sqlite_sequence WHERE name = 'assets'", [])
-		filename = str(result[0].seq) + "_" + path.get_file()
+		filename = str(result[0].seq + 1) + "_" + path.get_file()
 		
 	return _build_assets_path(filename)
+
+# Tries to decode the file name in format of ID_NAME.EXT
+# Returns an array with two entries [0] => ID [1] => NAME.EXT
+# Returns an empty array, if the format didn't match
+func decode_asset_name(path : String) -> Array:
+	var decoded_file := path.get_file().split("_", false, 1)
+	if decoded_file.size() == 2:
+		if decoded_file[0].is_valid_integer():
+			return [int(decoded_file[0]), decoded_file[1]]
+	return []
 
 # Returns the path to the thumbnails directory.
 func get_thumbnail_path() -> String:
@@ -223,8 +238,17 @@ func _get_directory_assets_and_subdirs(directory_id) -> Dictionary:
 # 					Export
 # ---------------------------------------------
 
+# Saves a counter for each file of the export
+# This allows to overwrite existing files with the same name as an asset
+# But prevents multiple assets with the same name to be overwritten all over again
+# For example: You got two assets in a folder named Test.png
+# this is no problem for the library but for your os, so one file must be named different than the
+# other one. The name schema is the following NAME (COUNTER[1 - n]).EXT e.g. Test (1).png
+var _ExportedFilesCounter : Dictionary = {}
+
 # Exports a directory and all of it's content.
 func export_assets(directory_id: int, path : String) -> void:
+	_DirWatcher.paused = true # To prevent the watcher to track every read event.
 	path = path.replace("\\", "/")
 	var qresult = _AssetsDatabase.query_with_bindings("SELECT name FROM directories WHERE id = ?", [directory_id])
 	if !qresult.empty():
@@ -253,26 +277,47 @@ func export_assets(directory_id: int, path : String) -> void:
 				
 				# Export all assets inside the current processed directory.
 				for asset in result.assets:
-					export_asset(asset.id, directory.path + "/" + subdir.name + "/" + asset.name)
+					_export_asset(asset.id, directory.path + "/" + subdir.name, asset.name)
+
+	_ExportedFilesCounter = {}
+	_DirWatcher.paused = false
 
 # Export a single file.
-func export_asset(asset_id: int, path : String) -> void:
+func export_asset(asset_id: int, filename : String) -> void:
+	_DirWatcher.paused = true # To prevent the watcher to track every read event.
+	_export_asset(asset_id, filename.get_base_dir(), filename.get_file())
+	_ExportedFilesCounter = {}
+	_DirWatcher.paused = false
+
+# Export a single file.
+func _export_asset(asset_id: int, path : String, name_hint: String) -> void:
+	if path.empty():
+		return
+	
 	var asset : Dictionary = get_asset_by_id(asset_id)
 	if asset.has("filename"):
+		# Build the path
 		path = path.replace("\\", "/")
-		var new_path = path
+		if path[path.length() - 1] != '/':
+			path += "/"
+			
+		if name_hint.empty():
+			path += asset.filename
+		else:
+			path += name_hint
 		
 		# Since the asset library allows the same name multiple times in one directory,
 		# we must ensure, that for any export these names are unique.
-		var counter : int = 1
-		while _Directory.file_exists(new_path):
-			new_path = path.get_basename() + " (" + str(counter) + ")." + path.get_extension()
-			counter += 1
+		if _ExportedFilesCounter.has(path):
+			_ExportedFilesCounter[path] += 1
+			path = path.get_basename() + " (" + str(_ExportedFilesCounter[path]) + ")." + path.get_extension()
+		else:
+			_ExportedFilesCounter[path] = 0
 		
-		_Directory.copy(generate_and_migrate_assets_path(asset["filename"], asset_id), new_path)
+		_Directory.copy(generate_and_migrate_assets_path(asset["filename"], asset_id), path)
 		if asset["filename"].get_extension() == "obj":
 			var asset_path = generate_and_migrate_assets_path(asset["filename"].get_basename() + ".mtl", asset_id)
-			_Directory.copy(asset_path, new_path.get_basename() + ".mtl")
+			_Directory.copy(asset_path, path.get_basename() + ".mtl")
 
 # ---------------------------------------------
 # 				Add / Update
@@ -282,7 +327,8 @@ func export_asset(asset_id: int, path : String) -> void:
 func add_asset(path: String, thumbnailName, type) -> int:
 	var result : int = 0
 	var modified : int = _File.get_modified_time(path)
-	if _AssetsDatabase.insert("assets", {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName.get_file()}):
+	var decoded_file = decode_asset_name(path)
+	if _AssetsDatabase.insert("assets", {"filename": path.get_file() if decoded_file.empty() else decoded_file[1], "last_modified": modified, "type": type, "thumbnail": thumbnailName.get_file()}):
 		result = _AssetsDatabase.get_last_insert_rowid()
 	
 	return result
@@ -304,7 +350,8 @@ func update_asset(id : int, path: String, thumbnailName, type) -> bool:
 	
 	var result : bool = false
 	var modified : int = _File.get_modified_time(path)
-	result = _AssetsDatabase.update("assets", "id=" + str(id), {"filename": path.get_file(), "last_modified": modified, "type": type, "thumbnail": thumbnailName.get_file()})
+	var decoded_file = decode_asset_name(path)
+	result = _AssetsDatabase.update("assets", "id=" + str(id), {"filename": path.get_file() if decoded_file.empty() else decoded_file[1], "last_modified": modified, "type": type, "thumbnail": thumbnailName.get_file()})
 	return result
 
 # ---------------------------------------------
@@ -363,6 +410,15 @@ func get_parent_dir_id(directoryId: int) -> int:
 		return 0 if (qresult[0].parent_id == null) else qresult[0].parent_id 
 	
 	return 0
+	
+func get_parent_dir(directoryId: int) -> Dictionary:
+	var parent_id = get_parent_dir_id(directoryId)
+	if parent_id != 0:
+		var qresult := _AssetsDatabase.query_with_bindings("SELECT * FROM directories WHERE id = ?", [parent_id])
+		if !qresult.empty():
+			return qresult[0] 
+	
+	return {}
 	
 func query_assets(directoryId : int, search: String, skip: int, count: int) -> Array:
 	var results : Array = []
@@ -468,9 +524,11 @@ func _process(_delta: float) -> void:
 		_TotalFilecount = 0
 		_Thread.wait_to_finish()
 		_Thread = null
+		_CurrentImportingFilename.clear()
 		_DirWatcher.paused = false
 	elif !_Thread && _TotalFilecount != 0:
 		_TotalFilecount = 0
+		_CurrentImportingFilename.clear()
 
 # Render and index thread for assets
 func _render_and_index_thread(_unused : Object) -> void:
@@ -487,12 +545,6 @@ func _render_and_index_thread(_unused : Object) -> void:
 			var need_import = true
 			var asset_info : Dictionary = {}
 			
-#			match file_info.status:
-##				FileImportStatus.STATUS_OK:
-##					# Checks if the asset is already imported
-##					asset_info = AssetsDatabase.get_asset_by_name(file_info.file)
-#
-#				FileImportStatus.STATUS_OVERWRITE:
 			if file_info.has("overwrite_id") && (file_info.overwrite_id != 0):	# Only overwrite if the user selected overwrite
 				asset_info = get_asset_by_id(file_info.overwrite_id)
 				
@@ -508,14 +560,17 @@ func _render_and_index_thread(_unused : Object) -> void:
 					if !texture:
 						texture = BROKEN_IMAGE
 						
-					var just_increment : bool = false
+					var just_increment : bool = true
 					
 					# Link the asset with the currently opened directory
-					if file_info.has("parent_id"):
-						move_asset(file_info.parent_id, importer_result.id)
-						just_increment = file_info.parent_id == current_directory
+					if file_info.status != FileImportStatus.STATUS_OVERWRITE:
+						# Move every new asset accordingly
+						move_asset(current_directory if !file_info.has("parent_id") else file_info.parent_id, importer_result.id)
+						if file_info.has("parent_id"):
+							just_increment = current_directory != file_info.parent_id
 					else:
-						move_asset(current_directory, importer_result.id)
+						# Updates the view
+						just_increment = !(current_directory in get_asset_linked_dirs(importer_result.id))
 					
 					# Just increment counter, if we import an asset for a subdirectory.
 					if just_increment:
@@ -523,9 +578,6 @@ func _render_and_index_thread(_unused : Object) -> void:
 					else:
 						emit_signal("new_asset_added", importer_result.id, importer_result.name.get_basename().get_file(), texture)
 			else:	# Updates the ui, even if no file was imported.
-#				if file_info.has("parent_id"):
-#					move_asset(file_info.parent_id, AssetsDatabase.get_asset_by_name(file_info.file.get_file()).id)
-				
 				emit_signal("increase_import_counter")
 		else:
 			emit_signal("increase_import_counter")
@@ -537,26 +589,20 @@ func _find_importer(ext : String) -> IFormatImporter:
 	return null
 
 func _check_file_status(file : String) -> Array:
-	var file_meta := file.get_file().split("_", false, 1)
-	if file_meta.size() == 2:
-		if file_meta[0].is_valid_integer():
-			return [FileImportStatus.STATUS_OK, file_meta[0], file.get_base_dir() + "/" + file_meta[1]]
+	var decoded_file = decode_asset_name(file)
+	if !decoded_file.empty():
+		return [FileImportStatus.STATUS_OK, decoded_file[0]]
 	
-	var assets : Array = get_assets_by_name(file)
 	var status = FileImportStatus.STATUS_OK
-	if !assets.empty():
-#		var modified : int = _File.get_modified_time(file)
-#		if modified != asset.last_modified:
+	if _CurrentImportingFilename.has(file.get_file()):
 		status = FileImportStatus.STATUS_OVERWRITE
-#			var parents : Array = AssetsDatabase.get_asset_parent_dir_ids(asset.id)
-#			if (current_directory in parents) or parents.empty():
-#				status = FileImportStatus.STATUS_OVERWRITE
-#			else:
-#				status = FileImportStatus.STATUS_DUPLICATE
-#		else:
-#			status = FileImportStatus.STATUS_IGNORE
+	else:
+		_CurrentImportingFilename[file.get_file()] = null
+		var assets : Array = get_assets_by_name(file)
+		if !assets.empty():
+			status = FileImportStatus.STATUS_OVERWRITE
 			
-	return [status, 0, file]
+	return [status, 0]
 
 func _build_import_file_list(files: PoolStringArray) -> Array:
 	var newFiles : Array = []
@@ -566,8 +612,7 @@ func _build_import_file_list(files: PoolStringArray) -> Array:
 			var importer : IFormatImporter = _find_importer(file.get_extension().to_lower())
 			if importer:
 				var status : Array = _check_file_status(file)
-				if status[0] != FileImportStatus.STATUS_IGNORE:
-					newFiles.append({"file": status[2], "importer": importer, "status": status[0], "overwrite_id": status[1]})
+				newFiles.append({"file": file, "importer": importer, "status": status[0], "overwrite_id": status[1]})
 		elif _Directory.dir_exists(file):
 			directories.append({"dir": file, "parent_id": current_directory})
 	
@@ -591,9 +636,9 @@ func _build_import_file_list(files: PoolStringArray) -> Array:
 					if !directory.current_is_dir():
 						var importer : IFormatImporter = _find_importer(file_name.get_extension().to_lower())
 						if importer:
-							var status : Array = _check_file_status(dir.dir + "/" + file_name)
-							if status[0] != FileImportStatus.STATUS_IGNORE:
-								newFiles.append({"file": status[2], "importer": importer, "parent_id": parent_dir_id, "status": status[0], "overwrite_id": status[1]})
+							var file : String = dir.dir + "/" + file_name
+							var status : Array = _check_file_status(file)
+							newFiles.append({"file": file, "importer": importer, "parent_id": parent_dir_id, "status": status[0], "overwrite_id": status[1]})
 					else:
 						directories.append({"dir": dir.dir + "/" + file_name, "parent_id": parent_dir_id})
 				file_name = directory.get_next()
@@ -635,7 +680,8 @@ func _add_to_queue_and_start_thread(files : Array) -> void:
 	_QueueLock.lock()
 	_FileQueue.append_array(files)
 	_QueueLock.unlock()
-
+	
+#	_DirWatcher.paused = true
 #	_render_and_index_thread(null)
 
 	# Starts a new thread, but only if no one is already running.

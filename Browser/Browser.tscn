@@ -200,7 +200,6 @@ margin_bottom = 33.0
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="AssetLinksDialog" parent="CanvasLayer" instance=ExtResource( 19 )]
-visible = false
 
 [node name="OverwriteDialog" parent="CanvasLayer" instance=ExtResource( 18 )]
 visible = false

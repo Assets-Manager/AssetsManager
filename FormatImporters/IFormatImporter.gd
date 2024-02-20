@@ -47,7 +47,8 @@ func import(path: String, update_id : int) -> Dictionary:
 				update_id = _Library.add_asset(path, thumbnail_path.get_file() if thumbnail else null, get_type_id())
 			
 			if update_id != 0:
-				return {"id": update_id, "name": path.get_file(), "thumbnail": thumbnail}
+				var decoded_file = _Library.decode_asset_name(path)
+				return {"id": update_id, "name": decoded_file[1], "thumbnail": thumbnail}
 		_Directory.remove(thumbnail_path)
 	return {}
 

@@ -58,7 +58,7 @@ func _process(delta):
 		_ThumbnailThread = null
 	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.empty() && \
 		 !_OverwriteDialog.visible:
-		var file : Dictionary = _FilesToApprove.pop_back() # This is faster than pop_front
+		var file : Dictionary = _FilesToApprove.back()
 		match file.status:
 			AssetsLibrary.FileImportStatus.STATUS_OVERWRITE:
 				# Starts a new render thread, if there is currently no thumnail available.
@@ -67,6 +67,7 @@ func _process(delta):
 					_ThumbnailThread.start(self, "_render_thumbnail", file)
 				else:
 					# Sets the newly dropped asset for the dialog
+					_FilesToApprove.pop_back() # This is faster than pop_front
 					_OverwriteDialog.set_new_asset(_Thumbnail, file)
 					_OverwriteDialog.popup_centered()
 					_Thumbnail = null
