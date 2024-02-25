@@ -23,6 +23,10 @@ var _Directory : Directory = Directory.new()
 var _File : File = File.new()
 var _Importers : Dictionary = {}
 var _AssetsDatabase: AssetsDatabase = AssetsDatabase.new()
+var _HasFocus : bool = true
+
+# Assets found by File Watcher when the window didn't have focus.
+var _FilewatcherAssets : Array = []
 
 # Needed to track duplicates in currently dropped files.
 var _CurrentImportingFilename : Dictionary = {}
@@ -133,7 +137,11 @@ func generate_and_migrate_assets_path(path : String, id : int) -> String:
 			filename = path.get_file()
 	else:
 		var result = _AssetsDatabase.query_with_bindings("SELECT seq FROM sqlite_sequence WHERE name = 'assets'", [])
-		filename = str(result[0].seq + 1) + "_" + path.get_file()
+		var seq : int = 0
+		if !result.empty():
+			seq = result[0].seq
+		
+		filename = str(seq + 1) + "_" + path.get_file()
 		
 	return _build_assets_path(filename)
 
@@ -358,9 +366,24 @@ func update_asset(id : int, path: String, thumbnailName, type) -> bool:
 # 			Filesystemwatcher
 # ---------------------------------------------
 
+func _notification(what):
+	match what:
+		Node.NOTIFICATION_WM_FOCUS_IN:
+			_HasFocus = true
+			
+		Node.NOTIFICATION_WM_FOCUS_OUT:
+			_HasFocus = false
+
 func _add_or_update_asset(path : String) -> void:
 	print("DROPPED: " + path)
-	_files_dropped([_build_assets_path(path)], 0)
+	if _HasFocus:
+		_files_dropped([_build_assets_path(path)], 0)
+	else:
+		path = _build_assets_path(path)
+		
+		# Could be slow on many files
+		if !(path in _FilewatcherAssets):
+			_FilewatcherAssets.append(path)
 	
 func _deleted_asset(path : String) -> void:
 	print("DELETE: " + path)
@@ -520,6 +543,11 @@ func get_asset_linked_dirs(asset_id : int) -> Array:
 # ---------------------------------------------
 
 func _process(_delta: float) -> void:
+	# Handle any assets that were detected when the window wasn't focused.
+	if _HasFocus && !_FilewatcherAssets.empty():
+		_files_dropped(_FilewatcherAssets, 0)
+		_FilewatcherAssets.clear()
+	
 	if _Thread && !_Thread.is_alive():
 		_TotalFilecount = 0
 		_Thread.wait_to_finish()
@@ -565,9 +593,10 @@ func _render_and_index_thread(_unused : Object) -> void:
 					# Link the asset with the currently opened directory
 					if file_info.status != FileImportStatus.STATUS_OVERWRITE:
 						# Move every new asset accordingly
-						move_asset(current_directory if !file_info.has("parent_id") else file_info.parent_id, importer_result.id)
-						if file_info.has("parent_id"):
-							just_increment = current_directory != file_info.parent_id
+						if current_directory != 0:
+							move_asset(current_directory if !file_info.has("parent_id") else file_info.parent_id, importer_result.id)
+							if file_info.has("parent_id"):
+								just_increment = current_directory != file_info.parent_id
 					else:
 						# Updates the view
 						just_increment = !(current_directory in get_asset_linked_dirs(importer_result.id))

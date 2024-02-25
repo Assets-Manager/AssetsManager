@@ -18,12 +18,18 @@ func set_new_asset(thumb : Texture, asset : Dictionary) -> void:
 	_ImportAsset = asset
 	_NewAsset.text = _ImportAsset.file.get_file()
 	
-	_LinkBtn.visible = AssetsLibrary.current_directory != 0
+	_LinkBtn.visible = _directory_id() != 0
 	
 	# Gets a list with all assets, which shares the same name
 	var assets = AssetsLibrary.get_assets_by_name(_ImportAsset.file)
 	for asset in assets:	# Add them to the dialog
 		_add_asset(asset.id, AssetsLibrary.load_thumbnail(asset), asset.filename)
+
+func _directory_id() -> int:
+	if _ImportAsset.has("parent_id") && (_ImportAsset.parent_id != 0):
+		return _ImportAsset.parent_id
+		
+	return AssetsLibrary.current_directory
 
 # Adds  to the 'Existing assets' list
 func _add_asset(id : int, thumb : Texture, text : String) -> void:
@@ -52,7 +58,7 @@ func _card_selected(card) -> void:
 	
 	# Checks if the selected asset isn't already in the current directory.
 	if _LinkBtn.visible:
-		_LinkBtn.disabled = AssetsLibrary.is_asset_in_dir(card.id, AssetsLibrary.current_directory)
+		_LinkBtn.disabled = AssetsLibrary.is_asset_in_dir(card.id, _directory_id())
 
 # Creates the asset as a new one.
 func _on_New_pressed():
@@ -78,5 +84,5 @@ func _on_Overwrite_pressed():
 
 # Links the selected asset with the current directory.
 func _on_Link_pressed():
-	AssetsLibrary.link_asset(AssetsLibrary.current_directory, _SelectedCard.id)
+	AssetsLibrary.link_asset(_directory_id(), _SelectedCard.id)
 	_on_Cancel_pressed()

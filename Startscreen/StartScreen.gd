@@ -35,11 +35,13 @@ func _start_tour():
 		_GodotTour.visible = false
 
 func _on_NewProject_pressed():
+	_NativeDialogs.dialog_type = 2
 	var path : PoolStringArray = _NativeDialogs.show_modal()
 	if !path.empty():
 		_try_open_library(path[0], !_check_dir_is_empty(path[0]), "Directory must be empty!")
 
 func _on_OpenProject_pressed():
+	_NativeDialogs.dialog_type = 2
 	var path : PoolStringArray = _NativeDialogs.show_modal()
 	var file : File = File.new()
 	if !path.empty():

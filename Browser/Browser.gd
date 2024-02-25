@@ -245,7 +245,9 @@ func _asset_dropped(id : int, dopped_id : int, dropped_is_dir : bool) -> void:
 	if dropped_is_dir:
 		moved_succefully = AssetsLibrary.move_directory(id, dopped_id)
 	else:
-		moved_succefully = AssetsLibrary.move_asset(id, dopped_id)
+		# Prevents the asset to be moved into a directory, where it is already in.
+		if !AssetsLibrary.is_asset_in_dir(dopped_id, id):
+			moved_succefully = AssetsLibrary.move_asset(id, dopped_id)
 	
 	if moved_succefully:
 		_card_pressed(AssetsLibrary.current_directory, true)
@@ -345,4 +347,7 @@ func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN
 
 func _on_AssetLinksDialog_popup_hide():
+	_card_pressed(AssetsLibrary.current_directory, true)
+
+func _on_OverwriteDialog_popup_hide():
 	_card_pressed(AssetsLibrary.current_directory, true)

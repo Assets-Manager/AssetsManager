@@ -249,6 +249,7 @@ script = ExtResource( 8 )
 [connection signal="pressed" from="MarginContainer2/HBoxContainer/CloseLib" to="." method="_on_CloseLib_pressed"]
 [connection signal="page_update" from="MarginContainer2/HBoxContainer/Pagination" to="." method="_on_Pagination_page_update"]
 [connection signal="popup_hide" from="CanvasLayer/AssetLinksDialog" to="." method="_on_AssetLinksDialog_popup_hide"]
+[connection signal="popup_hide" from="CanvasLayer/OverwriteDialog" to="." method="_on_OverwriteDialog_popup_hide"]
 [connection signal="move_item" from="CanvasLayer/DirectoryMoveDialog" to="." method="_on_DirectoryMoveDialog_move_item"]
 [connection signal="refresh_ui" from="CanvasLayer/DirectoryMoveDialog" to="." method="_on_DirectoryMoveDialog_refresh_ui"]
 [connection signal="name_entered" from="CanvasLayer/InputBox" to="." method="_on_InputBox_name_entered"]

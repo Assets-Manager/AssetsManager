@@ -15,6 +15,9 @@ func generate(path : String) -> Texture:
 	var scene : PackedScene = loader.load(path)
 	if !scene:
 		return null
+		
+	for error in loader.get_errors():
+		print(error)
 	
 	var tmp := scene.instance()
 	_Scene.add_child(tmp)
