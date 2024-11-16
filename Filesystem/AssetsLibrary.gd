@@ -336,7 +336,7 @@ func add_asset(path: String, thumbnailName, type) -> int:
 	var result : int = 0
 	var modified : int = _File.get_modified_time(path)
 	var decoded_file = decode_asset_name(path)
-	if _AssetsDatabase.insert("assets", {"filename": path.get_file() if decoded_file.empty() else decoded_file[1], "last_modified": modified, "type": type, "thumbnail": thumbnailName.get_file()}):
+	if _AssetsDatabase.insert("assets", {"filename": path.get_file() if decoded_file.empty() else decoded_file[1], "last_modified": modified, "type": type, "thumbnail": thumbnailName.get_file() if thumbnailName else null}):
 		result = _AssetsDatabase.get_last_insert_rowid()
 	
 	return result
