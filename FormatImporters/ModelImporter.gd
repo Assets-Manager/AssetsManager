@@ -4,8 +4,8 @@ const PREVIEW = preload("res://Preview/Preview.tscn")
 var _Preview
 
 func register(library : Node, type_id : int) -> void:
-	.register(library, type_id)
-	_Preview = PREVIEW.instance()
+	super.register(library, type_id)
+	_Preview = PREVIEW.instantiate()
 	_Library.add_child(_Preview)
 
 # Returns the name of the type e.g.: Image
@@ -21,10 +21,10 @@ static func get_extensions() -> Array:
 	]
 	
 func _import_asset(path : String, update_id : int) -> int:
-	var ret : int = ._import_asset(path, update_id)
+	var ret : int = super._import_asset(path, update_id)
 	if (ret == OK) && (path.get_extension().to_lower() == "obj"):
-		ret = _Directory.rename(path.get_basename() + ".mtl", _Library.generate_and_migrate_assets_path(path.get_basename().get_file() + ".mtl", update_id))
+		ret = DirAccess.rename_absolute(path.get_basename() + ".mtl", _Library.generate_and_migrate_assets_path(path.get_basename().get_file() + ".mtl", update_id))
 	return ret
 	
-func render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture2D:
 	return _Preview.generate(path)

@@ -1,4 +1,4 @@
 extends Resource
 
-export(NodePath) var control : NodePath
-export(String) var text : String
+@export var control: NodePath
+@export var text: String

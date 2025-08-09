@@ -17,7 +17,7 @@ static func get_extensions() -> Array:
 		"webp"
 	]
 
-func render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture2D:
 	var img : Image = Image.new()
 	var result : ImageTexture = null
 	if img.load(path) == OK:
@@ -29,9 +29,8 @@ func render_thumbnail(path: String) -> Texture:
 				img.resize(width, round(width / aspect))
 			else:
 				var height : int = 128
-				img.resize(round(height / aspect), height)
+				img.resize(round(height * aspect), height)
 				
-		result = ImageTexture.new()
-		result.create_from_image(img, 0)
+		result = ImageTexture.create_from_image(img)
 	
 	return result

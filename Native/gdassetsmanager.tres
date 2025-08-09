@@ -1,0 +1,12 @@
+[gd_resource type="GDExtension" format=3 uid="uid://ch27fchrodqbm"]
+
+[resource]
+
+[configuration]
+
+entry_symbol = "assets_manager_library_init"
+compatibility_minimum = "4.4"
+
+[libraries]
+
+windows.debug.x86_64 = "res://Native/libgdassetsmanager.dll"

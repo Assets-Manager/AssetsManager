@@ -1,4 +1,4 @@
-tool
+@tool
 class_name GodotTour
 extends Control
 
@@ -6,10 +6,10 @@ signal tour_finished()
 
 const TOUR_STEP = preload("TourStep.gd")
 
-export(Array, Resource) var steps : Array setget set_steps
+@export var steps : Array: set = set_steps
 
-onready var _TutorialDialog : AcceptDialog = AcceptDialog.new()
-onready var _Outline : ReferenceRect = ReferenceRect.new()
+@onready var _TutorialDialog : AcceptDialog = AcceptDialog.new()
+@onready var _Outline : ReferenceRect = ReferenceRect.new()
 var _PreviousButton : Button
 
 var _Running : bool = false
@@ -19,28 +19,29 @@ func _ready() -> void:
 	add_child(_Outline)
 	add_child(_TutorialDialog)
 	
-	_TutorialDialog.connect("confirmed", self, "_confirmed")
-	_TutorialDialog.connect("custom_action", self, "_custom_action")
+	_TutorialDialog.title = ""
+	_TutorialDialog.connect("confirmed", Callable(self, "_confirmed"))
+	_TutorialDialog.connect("custom_action", Callable(self, "_custom_action"))
 	
 	_PreviousButton = _TutorialDialog.add_button("Previous", false, "prev")
 	_PreviousButton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_TutorialDialog.get_ok().mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_TutorialDialog.get_ok_button().mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	
 	_Outline.editor_only = false
 	_Outline.border_color = Color("#dc7412")
 	_Outline.border_width = 2
 	_Outline.hide()
 	
-	_TutorialDialog.popup_exclusive = true
+	_TutorialDialog.exclusive = true
 	anchor_bottom = 1
 	anchor_right = 1
 	
-	if !Engine.editor_hint:
-		get_viewport().connect("size_changed", self, "_size_changed_2")
-		connect("resized", self, "_size_changed_2")
+	if !Engine.is_editor_hint():
+		get_viewport().connect("size_changed", Callable(self, "_size_changed_2"))
+		connect("resized", Callable(self, "_size_changed_2"))
 
 func start() -> void:
-	if !steps.empty():
+	if !steps.is_empty():
 		_Running = true
 		_Step = 0
 		
@@ -70,19 +71,19 @@ func _popup_dialog() -> void:
 		_PreviousButton.show()
 		
 	if _Step == (steps.size() - 1):
-		_TutorialDialog.get_ok().text = "Finish"
+		_TutorialDialog.get_ok_button().text = "Finish"
 	else:
-		_TutorialDialog.get_ok().text = "Next"
+		_TutorialDialog.get_ok_button().text = "Next"
 	
 	if step.control:
 		var control : Control = get_node(step.control)
-		var pos : Vector2 = control.rect_global_position + control.rect_size
+		var pos : Vector2 = control.global_position + control.size
 		
-		_Outline.rect_position = control.rect_global_position
-		_Outline.rect_size = control.rect_size
+		_Outline.position = control.global_position
+		_Outline.size = control.size
 		
-		_TutorialDialog.rect_position = pos
-		_TutorialDialog.rect_size = Vector2.ONE
+		_TutorialDialog.position = pos
+		_TutorialDialog.size = Vector2.ONE
 		_TutorialDialog.popup()
 		_Outline.show()
 	else:
@@ -96,5 +97,5 @@ func set_steps(value : Array) -> void:
 			steps[i] = TOUR_STEP.new()
 
 func _size_changed_2() -> void:
-	if !steps.empty() and _Running:
+	if !steps.is_empty() and _Running:
 		call_deferred("_popup_dialog")

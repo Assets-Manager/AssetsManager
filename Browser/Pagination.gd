@@ -2,25 +2,30 @@ extends HBoxContainer
 
 signal page_update(page)
 
-export(int) var total_pages : int = 1 setget set_total_pages
-export(int) var current_page : int = 1 setget set_current_page
+@export var total_pages: int = 1: set = set_total_pages
+@export var current_page: int = 1: set = set_current_page
 
-onready var _Page := $Page
-onready var _Left := $Left
-onready var _Right := $Right
+@onready var _Page := $Page
+@onready var _Left := $Left
+@onready var _Right := $Right
+
+var _isUpdatingPageCount : bool = false
 
 func set_total_pages(value : int) -> void:
 	total_pages = value
-	_update_page_count()
+	if !_isUpdatingPageCount:
+		_update_page_count()
 	
 func set_total_pages_without_update(value : int) -> void:
 	total_pages = value
 	
 func set_current_page(value : int) -> void:
 	current_page = value
-	_update_page_count()
+	if !_isUpdatingPageCount:
+		_update_page_count()
 
 func _update_page_count() -> void:
+	_isUpdatingPageCount = true
 	if current_page < 1:
 		current_page = 1
 	elif current_page > total_pages:
@@ -44,6 +49,8 @@ func _update_page_count() -> void:
 			_Left.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			
 		emit_signal("page_update", current_page)
+		
+	_isUpdatingPageCount = false
 		
 func _ready() -> void:
 	_update_page_count()

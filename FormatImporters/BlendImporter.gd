@@ -17,7 +17,7 @@ func _header_pointer_size(header : String) -> int:
 	return 4 if header[7] == '_' else 8
 
 # Extracts the thumbnail from the .blend file
-func _extract_thumbnail(file : File, head_size : int) -> Texture:
+func _extract_thumbnail(file : FileAccess, head_size : int) -> Texture2D:
 	var result : ImageTexture = null
 	var img : Image = Image.new()
 	
@@ -39,12 +39,11 @@ func _extract_thumbnail(file : File, head_size : int) -> Texture:
 				if (width < 0) || (height < 0) || (data_size != expected_data_size):
 					return null
 				
-				var pixeldata : PoolByteArray = file.get_buffer(data_size)
+				var pixeldata : PackedByteArray = file.get_buffer(data_size)
 				img.create_from_data(width, height, false, Image.FORMAT_RGBA8, pixeldata)
 				img.flip_y()
 				
-				result = ImageTexture.new()
-				result.create_from_image(img, 0)
+				result = ImageTexture.create_from_image(img) #,0
 				
 				return result
 				
@@ -56,13 +55,13 @@ func _extract_thumbnail(file : File, head_size : int) -> Texture:
 	
 	return result
 
-func render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture2D:
 	var result : ImageTexture = null
 	
-	var file : File = File.new()
-	if file.open(path, File.READ) == OK:
-		var header : PoolByteArray = file.get_buffer(12)
-		if header.size() != 12: # Error no valid .blend file.
+	var file : FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file:
+		var header : PackedByteArray = file.get_buffer(12)
+		if header.size() != 12: # Error no valid super.blend file.
 			return null
 		
 		var header_str : String = header.get_string_from_utf8()

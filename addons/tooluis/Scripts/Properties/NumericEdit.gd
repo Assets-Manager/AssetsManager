@@ -1,4 +1,4 @@
-tool
+@tool
 extends LineEdit
 
 enum ValueType {
@@ -8,16 +8,16 @@ enum ValueType {
 
 signal value_changed(value)
 
-export(float) var value := 0.0 setget set_value
-export(ValueType) var value_type := ValueType.INTEGER
+@export var value := 0.0: set = set_value
+@export var value_type := ValueType.INTEGER
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventKey:
-		if event.scancode == KEY_ESCAPE:
+		if event.keycode == KEY_ESCAPE:
 			release_focus()
 	elif event is InputEventMouseButton:
-		if (event.button_index == BUTTON_LEFT) and event.pressed:
-			yield(get_tree(), "idle_frame")
+		if (event.button_index == MOUSE_BUTTON_LEFT) and event.pressed:
+			await get_tree().idle_frame
 			select_all()
 			
 	#accept_event()
@@ -41,7 +41,7 @@ func _check_value():
 	
 	match value_type:
 		ValueType.INTEGER:
-			if text.is_valid_integer():
+			if text.is_valid_int():
 				val = int(text)
 				value_ok = true
 		ValueType.FLOAT:

@@ -1,122 +1,105 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=11 format=3 uid="uid://dhqeoce0vqhp7"]
 
-[ext_resource path="res://Assets/Theme/noto-sans-bold.tres" type="DynamicFont" id=1]
-[ext_resource path="res://Native/GDNativeFileDialog.gdns" type="Script" id=2]
-[ext_resource path="res://Startscreen/StartScreen.gd" type="Script" id=3]
-[ext_resource path="res://Startscreen/AcceptDialog.gd" type="Script" id=4]
-[ext_resource path="res://Startscreen/DisclaimerDialog.tscn" type="PackedScene" id=5]
-[ext_resource path="res://addons/godottour/GodotTour.gd" type="Script" id=6]
-[ext_resource path="res://addons/godottour/TourStep.gd" type="Script" id=7]
+[ext_resource type="FontFile" path="res://Assets/Theme/noto-sans-bold.tres" id="1"]
+[ext_resource type="Script" uid="uid://h52vmhtha5q0" path="res://Startscreen/StartScreen.gd" id="3"]
+[ext_resource type="Script" uid="uid://6yo1b3auudwa" path="res://Startscreen/AcceptDialog.gd" id="4"]
+[ext_resource type="PackedScene" uid="uid://cyi2bdysoe1rq" path="res://Startscreen/DisclaimerDialog.tscn" id="5"]
+[ext_resource type="Script" uid="uid://bvesl2jtdvn0w" path="res://addons/godottour/GodotTour.gd" id="6"]
+[ext_resource type="Script" uid="uid://b87d1fb76imw" path="res://addons/godottour/TourStep.gd" id="7"]
 
-[sub_resource type="Resource" id=1]
-script = ExtResource( 7 )
+[sub_resource type="Resource" id="1"]
+script = ExtResource("7")
 control = NodePath("../../VBoxContainer/NewProject")
 text = "Allows you to create a new directory where assets will be stored."
 
-[sub_resource type="Resource" id=2]
-script = ExtResource( 7 )
+[sub_resource type="Resource" id="2"]
+script = ExtResource("7")
 control = NodePath("../../VBoxContainer/OpenProject")
 text = "Allows you to open an existing library directory. (Must include an assets.db file)"
 
-[sub_resource type="Resource" id=3]
-script = ExtResource( 7 )
+[sub_resource type="Resource" id="3"]
+script = ExtResource("7")
 control = NodePath("../../VBoxContainer/ScrollContainer/Recent")
 text = "A list of all recently opened libraries."
 
-[sub_resource type="Resource" id=4]
-script = ExtResource( 7 )
+[sub_resource type="Resource" id="4"]
+script = ExtResource("7")
 control = NodePath("")
 text = "The tutorial continues after you create a new library or open an existing one."
 
 [node name="StartScreen" type="CenterContainer"]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource( 3 )
+script = ExtResource("3")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
-margin_left = 443.0
-margin_top = 109.0
-margin_right = 580.0
-margin_bottom = 491.0
+layout_mode = 2
 
 [node name="Label" type="Label" parent="VBoxContainer"]
-margin_right = 137.0
-margin_bottom = 42.0
-custom_fonts/font = ExtResource( 1 )
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1")
 text = "Welcome"
 
 [node name="Control2" type="Control" parent="VBoxContainer"]
-margin_top = 46.0
-margin_right = 137.0
-margin_bottom = 56.0
-rect_min_size = Vector2( 0, 10 )
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
 
 [node name="Label2" type="Label" parent="VBoxContainer"]
-margin_top = 60.0
-margin_right = 137.0
-margin_bottom = 83.0
+layout_mode = 2
 text = "Start"
 
 [node name="NewProject" type="LinkButton" parent="VBoxContainer"]
-margin_top = 87.0
-margin_right = 137.0
-margin_bottom = 110.0
-custom_colors/font_color = Color( 0.431373, 0.615686, 1, 1 )
+layout_mode = 2
+theme_override_colors/font_color = Color(0.431373, 0.615686, 1, 1)
 text = "New library"
 
 [node name="OpenProject" type="LinkButton" parent="VBoxContainer"]
-margin_top = 114.0
-margin_right = 137.0
-margin_bottom = 137.0
+layout_mode = 2
 focus_mode = 2
-custom_colors/font_color = Color( 0.431373, 0.615686, 1, 1 )
+theme_override_colors/font_color = Color(0.431373, 0.615686, 1, 1)
 text = "Open library"
 
 [node name="Control" type="Control" parent="VBoxContainer"]
-margin_top = 141.0
-margin_right = 137.0
-margin_bottom = 151.0
-rect_min_size = Vector2( 0, 10 )
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
 
 [node name="Label3" type="Label" parent="VBoxContainer"]
-margin_top = 155.0
-margin_right = 137.0
-margin_bottom = 178.0
+layout_mode = 2
 text = "Recent"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
-margin_top = 182.0
-margin_right = 137.0
-margin_bottom = 382.0
-rect_min_size = Vector2( 0, 200 )
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
 
 [node name="Recent" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
-margin_right = 137.0
-margin_bottom = 200.0
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="NativeDialogs" type="Node" parent="."]
-script = ExtResource( 2 )
-dialog_type = 2
+[node name="NativeDialogs" type="FileDialog" parent="."]
+access = 2
+use_native_dialog = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="InfoDialog" type="AcceptDialog" parent="CanvasLayer"]
-margin_right = 88.0
-margin_bottom = 80.0
-window_title = ""
-script = ExtResource( 4 )
+script = ExtResource("4")
 
-[node name="DisclaimerDialog" parent="CanvasLayer" instance=ExtResource( 5 )]
+[node name="DisclaimerDialog" parent="CanvasLayer" instance=ExtResource("5")]
+visible = false
 
 [node name="GodotTour" type="Control" parent="CanvasLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource( 6 )
-steps = [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ), SubResource( 4 ) ]
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6")
+steps = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4")]
 
 [connection signal="pressed" from="VBoxContainer/NewProject" to="." method="_on_NewProject_pressed"]
 [connection signal="pressed" from="VBoxContainer/OpenProject" to="." method="_on_OpenProject_pressed"]
-[connection signal="popup_hide" from="CanvasLayer/DisclaimerDialog" to="." method="_on_DisclaimerDialog_popup_hide"]
 [connection signal="tour_finished" from="CanvasLayer/GodotTour" to="." method="_on_GodotTour_tour_finished"]

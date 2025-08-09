@@ -1,79 +1,76 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=5 format=3 uid="uid://cat75noqce3w2"]
 
-[ext_resource path="res://addons/tooluis/Scenes/Properties/NumericEdit.tscn" type="PackedScene" id=1]
-[ext_resource path="res://addons/tooluis/Scripts/Properties/Vector2Property.gd" type="Script" id=2]
+[ext_resource type="PackedScene" uid="uid://ccug1156k30ce" path="res://addons/tooluis/Scenes/Properties/NumericEdit.tscn" id="1"]
+[ext_resource type="Script" uid="uid://ggkxldgyux1d" path="res://addons/tooluis/Scripts/Properties/Vector2Property.gd" id="2"]
 
-[sub_resource type="Image" id=3]
+[sub_resource type="Image" id="Image_aejb5"]
 data = {
-"data": PoolByteArray( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 7, 223, 110, 224, 199, 224, 243, 224, 243, 224, 199, 222, 109, 219, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 227, 27, 224, 207, 224, 254, 224, 254, 224, 254, 224, 254, 224, 254, 224, 254, 224, 206, 227, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 7, 224, 207, 224, 254, 224, 225, 224, 83, 216, 13, 216, 13, 223, 80, 224, 215, 224, 254, 224, 206, 219, 7, 0, 0, 0, 0, 0, 0, 0, 0, 223, 110, 224, 254, 224, 225, 227, 18, 0, 0, 0, 0, 0, 0, 0, 0, 225, 17, 224, 225, 224, 254, 222, 108, 0, 0, 0, 0, 0, 0, 0, 0, 224, 200, 224, 254, 224, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222, 85, 224, 254, 224, 198, 0, 0, 0, 0, 0, 0, 0, 0, 224, 242, 224, 254, 216, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 14, 224, 254, 224, 241, 0, 0, 0, 0, 224, 158, 224, 254, 224, 254, 224, 254, 224, 254, 224, 158, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 221, 15, 224, 254, 224, 241, 0, 0, 0, 0, 232, 11, 224, 212, 224, 254, 224, 254, 224, 212, 232, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222, 86, 224, 254, 224, 198, 0, 0, 0, 0, 0, 0, 225, 43, 224, 243, 224, 243, 225, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 228, 19, 225, 226, 224, 254, 222, 108, 0, 0, 0, 0, 0, 0, 0, 0, 223, 96, 223, 96, 0, 0, 0, 0, 0, 0, 0, 0, 219, 14, 222, 86, 225, 226, 224, 254, 224, 206, 213, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 254, 224, 254, 224, 254, 224, 206, 227, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 242, 224, 197, 222, 108, 213, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ),
+"data": PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 7, 223, 110, 224, 199, 224, 243, 224, 243, 224, 199, 222, 109, 219, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 227, 27, 224, 207, 224, 254, 224, 254, 224, 254, 224, 254, 224, 254, 224, 254, 224, 206, 227, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 7, 224, 207, 224, 254, 224, 225, 224, 83, 216, 13, 216, 13, 223, 80, 224, 215, 224, 254, 224, 206, 219, 7, 0, 0, 0, 0, 0, 0, 0, 0, 223, 110, 224, 254, 224, 225, 227, 18, 0, 0, 0, 0, 0, 0, 0, 0, 225, 17, 224, 225, 224, 254, 222, 108, 0, 0, 0, 0, 0, 0, 0, 0, 224, 200, 224, 254, 224, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222, 85, 224, 254, 224, 198, 0, 0, 0, 0, 0, 0, 0, 0, 224, 242, 224, 254, 216, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 14, 224, 254, 224, 241, 0, 0, 0, 0, 224, 158, 224, 254, 224, 254, 224, 254, 224, 254, 224, 158, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 221, 15, 224, 254, 224, 241, 0, 0, 0, 0, 232, 11, 224, 212, 224, 254, 224, 254, 224, 212, 232, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222, 86, 224, 254, 224, 198, 0, 0, 0, 0, 0, 0, 225, 43, 224, 243, 224, 243, 225, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 228, 19, 225, 226, 224, 254, 222, 108, 0, 0, 0, 0, 0, 0, 0, 0, 223, 96, 223, 96, 0, 0, 0, 0, 0, 0, 0, 0, 219, 14, 222, 86, 225, 226, 224, 254, 224, 206, 213, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 254, 224, 254, 224, 254, 224, 206, 227, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 242, 224, 197, 222, 108, 213, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 "format": "LumAlpha8",
 "height": 16,
 "mipmaps": false,
 "width": 16
 }
 
-[sub_resource type="ImageTexture" id=2]
-flags = 4
-flags = 4
-image = SubResource( 3 )
-size = Vector2( 16, 16 )
+[sub_resource type="ImageTexture" id="2"]
+image = SubResource("Image_aejb5")
 
 [node name="Vector2Property" type="VBoxContainer"]
-script = ExtResource( 2 )
+script = ExtResource("2")
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="."]
-margin_right = 120.0
-margin_bottom = 36.0
-rect_min_size = Vector2( 0, 36 )
+offset_right = 120.0
+offset_bottom = 36.0
+custom_minimum_size = Vector2(0, 36)
 
 [node name="Name" type="Label" parent="HBoxContainer3"]
-margin_top = 7.0
-margin_right = 120.0
-margin_bottom = 29.0
-rect_min_size = Vector2( 0, 22 )
+offset_top = 7.0
+offset_right = 120.0
+offset_bottom = 29.0
+custom_minimum_size = Vector2(0, 22)
 size_flags_horizontal = 3
 valign = 1
 
 [node name="Revert" type="Button" parent="HBoxContainer3"]
 visible = false
-margin_left = 154.0
-margin_right = 182.0
-margin_bottom = 36.0
-icon = SubResource( 2 )
+offset_left = 154.0
+offset_right = 182.0
+offset_bottom = 36.0
+icon = SubResource("2")
 flat = true
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
-margin_top = 40.0
-margin_right = 120.0
-margin_bottom = 54.0
+offset_top = 40.0
+offset_right = 120.0
+offset_bottom = 54.0
 
 [node name="Label" type="Label" parent="HBoxContainer"]
-margin_right = 58.0
-margin_bottom = 14.0
+offset_right = 58.0
+offset_bottom = 14.0
 size_flags_horizontal = 3
 text = "X"
 align = 1
 
 [node name="Label2" type="Label" parent="HBoxContainer"]
-margin_left = 62.0
-margin_right = 120.0
-margin_bottom = 14.0
+offset_left = 62.0
+offset_right = 120.0
+offset_bottom = 14.0
 size_flags_horizontal = 3
 text = "Y"
 align = 1
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="."]
-margin_top = 58.0
-margin_right = 120.0
-margin_bottom = 82.0
+offset_top = 58.0
+offset_right = 120.0
+offset_bottom = 82.0
 
-[node name="NumericEdit" parent="HBoxContainer2" instance=ExtResource( 1 )]
+[node name="NumericEdit" parent="HBoxContainer2" instance=ExtResource("1")]
 size_flags_horizontal = 3
 align = 1
 
-[node name="NumericEdit2" parent="HBoxContainer2" instance=ExtResource( 1 )]
-margin_left = 62.0
-margin_right = 120.0
+[node name="NumericEdit2" parent="HBoxContainer2" instance=ExtResource("1")]
+offset_left = 62.0
+offset_right = 120.0
 size_flags_horizontal = 3
 align = 1
 

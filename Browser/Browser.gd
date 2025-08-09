@@ -1,44 +1,46 @@
 extends VBoxContainer
 
-const CARD = preload("res://Browser/Card.tscn")
-const FOLDER_ICON = preload("res://Assets/Material Icons/folder.svg")
+const ASSET_CARD = preload("res://Browser/AssetCard.tscn")
 const ITEMS_PER_PAGE : int = 100
 
-onready var _Cards := $ScrollContainer/CenterContainer/Cards
-onready var _ImporterDialog := $CanvasLayer/ImporterDialog
-onready var _DirectoryMoveDialog := $CanvasLayer/DirectoryMoveDialog
-onready var _Pagination := $MarginContainer2/HBoxContainer/Pagination
-onready var _Search := $MarginContainer/HBoxContainer/Search
-onready var _InputBox := $CanvasLayer/InputBox
-onready var _ScrollContainer := $ScrollContainer
-onready var _BackButton := $MarginContainer/HBoxContainer/Back
-onready var _HomeButton := $MarginContainer/HBoxContainer/Home
-onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
-onready var _NativeDialog := $NativeDialog
-onready var _InfoDialog := $CanvasLayer/InfoDialog
-onready var _GodotTour := $CanvasLayer/GodotTour
-onready var _OverwriteDialog := $CanvasLayer/OverwriteDialog
-onready var _AssetLinksDialog := $CanvasLayer/AssetLinksDialog
+@onready var _Cards := $ScrollContainer/CenterContainer/Cards
+@onready var _ImporterDialog := $CanvasLayer/ImporterDialog
+@onready var _DirectoryMoveDialog := $CanvasLayer/DirectoryMoveDialog
+@onready var _Pagination := $MarginContainer2/HBoxContainer/Pagination
+@onready var _Search := $MarginContainer/HBoxContainer/Search
+@onready var _InputBox := $CanvasLayer/InputBox
+@onready var _ScrollContainer := $ScrollContainer
+@onready var _BackButton := $MarginContainer/HBoxContainer/Back
+@onready var _HomeButton := $MarginContainer/HBoxContainer/Home
+@onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
+@onready var _NativeDialog : FileDialog = $NativeDialog
+@onready var _InfoDialog := $CanvasLayer/InfoDialog
+@onready var _GodotTour := $CanvasLayer/GodotTour
+@onready var _OverwriteDialog := $CanvasLayer/OverwriteDialog
+@onready var _AssetLinksDialog := $CanvasLayer/AssetLinksDialog
 
-var _DirectoryToDelete : int = -1
+var _DirectoriesToDelete : Array[AMDirectory] = []
 var _VisibleCards : int = 0
-var _FilesToApprove : Array = []
+var _FilesToApprove : Array[Dictionary] = []
 
-var _Thumbnail : Texture = null
+var _Thumbnail : Texture2D = null
 var _ThumbnailThread : Thread = null
 
 func _ready() -> void:
 	# Connects all events of the library.
-	AssetsLibrary.connect("update_total_import_assets", self, "_update_total_import_assets")
-	AssetsLibrary.connect("files_to_check", self, "_files_to_check")
+	AssetsLibrary.connect("update_total_import_assets", Callable(self, "_update_total_import_assets"))
+	AssetsLibrary.connect("files_to_check", Callable(self, "_files_to_check"))
 	
 	# IMPORTANT: These MUST be called deferred, since this signals are emitted inside a thread.
-	AssetsLibrary.connect("new_asset_added", self, "_new_asset_added", [], CONNECT_DEFERRED)
-	AssetsLibrary.connect("increase_import_counter", self, "_increase_import_counter", [], CONNECT_DEFERRED)
+	AssetsLibrary.connect("new_asset_added", Callable(self, "_new_asset_added").bind(), CONNECT_DEFERRED)
+	AssetsLibrary.connect("increase_import_counter", Callable(self, "_increase_import_counter").bind(), CONNECT_DEFERRED)
 	
 	# Updates the initial pagination
 	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
 	
+	call_deferred("_start_tour")
+	
+func _start_tour() -> void:
 	# Does the user already did the tutorial?
 	if ProgramManager.settings.tutorial_step < ProgramManager.settings.TutorialStep.BROWSER_SCREEN:
 		_GodotTour.visible = true
@@ -56,7 +58,7 @@ func _process(delta):
 	if _ThumbnailThread && !_ThumbnailThread.is_alive():
 		_Thumbnail = _ThumbnailThread.wait_to_finish()
 		_ThumbnailThread = null
-	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.empty() && \
+	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.is_empty() && \
 		 !_OverwriteDialog.visible:
 		var file : Dictionary = _FilesToApprove.back()
 		match file.status:
@@ -64,7 +66,7 @@ func _process(delta):
 				# Starts a new render thread, if there is currently no thumnail available.
 				if !_Thumbnail:
 					_ThumbnailThread = Thread.new()
-					_ThumbnailThread.start(self, "_render_thumbnail", file)
+					_ThumbnailThread.start(Callable(self, "_render_thumbnail").bind(file))
 				else:
 					# Sets the newly dropped asset for the dialog
 					_FilesToApprove.pop_back() # This is faster than pop_front
@@ -74,7 +76,7 @@ func _process(delta):
 
 # Renders the thumnail. Since some importers only work on the main thread,
 # this one must be called outside of the main thread, to avoid locking.
-func _render_thumbnail(file) -> Texture:
+func _render_thumbnail(file) -> Texture2D:
 	return file.importer.render_thumbnail(file.file)
 
 func _exit_tree() -> void:
@@ -94,22 +96,22 @@ func _update_total_import_assets(total_files : int) -> void:
 
 # Called everytime an asset file is either a duplicate
 # or is dropped into a new folder.
-func _files_to_check(files: Array) -> void:
+func _files_to_check(files: Array[Dictionary]) -> void:
 	_FilesToApprove.append_array(files)
 
 # Called if a new assets were successfully imported
 # Updates the progressbar of the importer dialog.
-func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
+func _new_asset_added(asset: AMAsset) -> void:
 	# Only add a new card to the gui, if the max items per page isn't reached.
 	if (_Cards.get_child_count() < ITEMS_PER_PAGE) || (_VisibleCards < _Cards.get_child_count()):
-		var tmp = null
+		var tmp: AssetCard = null
 		
 		# Checks if a card needs to be updated
 		for child in _Cards.get_children():
-			if !child.visible:
+			if !(child is AssetCard) || !child.visible:
 				break
 				
-			if child.id == id:
+			if child.dataset.id == asset.id:
 				tmp = child
 				break
 		
@@ -120,11 +122,8 @@ func _new_asset_added(id: int, name : String, thumbnail : Texture) -> void:
 			elif _VisibleCards < _Cards.get_child_count():
 				tmp = _Cards.get_child(_VisibleCards)
 			
-		tmp.set_texture(thumbnail)
-		tmp.set_title(name)
-		tmp.set_parent_folder(0)
-		tmp.id = id
-		tmp.is_dir = false
+		tmp.set_parent_folder(AssetsLibrary.current_directory)
+		tmp.dataset = asset
 		tmp.visible = true
 		_VisibleCards += 1
 	else:
@@ -162,7 +161,7 @@ func _on_Pagination_page_update(page : int) -> void:
 		# Reuse counter.
 		_VisibleCards = 0
 		for card in cards:
-			var tmp
+			var tmp: AssetCard = null
 			
 			# Creates or reuses a card element.
 			if _VisibleCards >= _Cards.get_child_count():
@@ -174,42 +173,29 @@ func _on_Pagination_page_update(page : int) -> void:
 			
 			_VisibleCards += 1
 			
-			# Sets the parent folder id, if the user searches in the root url.
+			# Sets the parent folder id.
 			# So the user can open the containing folder of an asset.
-			if !_Search.text.empty() && (AssetsLibrary.current_directory == 0) && card.has("parent_id") && (card["parent_id"] != null):
-				tmp.set_parent_folder(card["parent_id"])
-			else:
-				tmp.set_parent_folder(0)
+			tmp.set_parent_folder(card.parent_id)
 			
 			# Fill the needed informations for a card.
-			tmp.id = card["id"]
-			if card.has("thumbnail"):
-				tmp.set_texture(card["thumbnail"])
-				tmp.is_dir = false
-			else:
-				tmp.set_texture(FOLDER_ICON)
-				tmp.is_dir = true
-				
-			tmp.set_title(card["name"])
+			tmp.dataset = card
 
 # ---------------------------------------------
 # 			    Card signals
 # ---------------------------------------------
 
-func _move_to_directory_pressed(id: int, is_dir : bool) -> void:
-	_DirectoryMoveDialog.show_dialog(id, is_dir)
+func _move_to_directory_pressed(datasets: Array) -> void:
+	_DirectoryMoveDialog.show_dialog(datasets)
 	
 func _show_links(id: int) -> void:
 	_AssetLinksDialog.set_asset_id(id)
 	_AssetLinksDialog.popup_centered()
 	
-func _remove_link(id: int) -> void:
-	if AssetsLibrary.unlink_asset(AssetsLibrary.current_directory, id):
-		_card_pressed(AssetsLibrary.current_directory, true)
-	
 func _card_pressed(id: int, is_dir : bool) -> void:
 	# Opens the pressed directory.
 	if is_dir:
+		BulkHelper.deselect_all()
+		
 		AssetsLibrary.current_directory = id
 		_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, _Search.text) / float(ITEMS_PER_PAGE)))
 		_Pagination.current_page = 1
@@ -219,44 +205,30 @@ func _card_pressed(id: int, is_dir : bool) -> void:
 		_HomeButton.disabled = _BackButton.disabled
 
 # Exports an asset
-func _export_assets(id: int, is_dir : bool) -> void:
-	if !is_dir:	# Export one asset file
-		_NativeDialog.dialog_type = 1
-		var asset : Dictionary = AssetsLibrary.get_asset_by_id(id)
-		if asset.has("filename"):
-			_NativeDialog.initial_path = asset["filename"]
-			var file : PoolStringArray = _NativeDialog.show_modal()
-			if !file.empty():
-				AssetsLibrary.export_asset(id, file[0])
-	else:	# Export a folder
-		_NativeDialog.dialog_type = 2
-		var folder : PoolStringArray = _NativeDialog.show_modal()
-		if !folder.empty():
-			AssetsLibrary.export_assets(id, folder[0])
-
-func _delete_card(id: int, is_dir : bool) -> void:
-	if is_dir:
-		_DirectoryToDelete = id
-		_DeleteDirDialog.popup_centered()
-
-# Called if a directory or asset was dropped onto a directory.
-func _asset_dropped(id : int, dopped_id : int, dropped_is_dir : bool) -> void:
-	var moved_succefully : bool = false
-	if dropped_is_dir:
-		moved_succefully = AssetsLibrary.move_directory(id, dopped_id)
-	else:
-		# Prevents the asset to be moved into a directory, where it is already in.
-		if !AssetsLibrary.is_asset_in_dir(dopped_id, id):
-			moved_succefully = AssetsLibrary.move_asset(id, dopped_id)
+func _export_assets(datasets: Array) -> void:
+	if datasets.is_empty():
+		return
 	
-	if moved_succefully:
-		_card_pressed(AssetsLibrary.current_directory, true)
+	if (datasets.size() > 1) || (datasets[0] is AMDirectory):
+		_NativeDialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	else:
+		_NativeDialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	
+	var path : String = ""
+	_NativeDialog.popup_centered()
+	if (datasets.size() > 1) || (datasets[0] is AMDirectory):
+		path = await _NativeDialog.dir_selected
+	else:
+		path = await _NativeDialog.file_selected
+	
+	if !path.is_empty():
+		AssetsLibrary.export_assets(datasets, path)
 
+func _delete_card(dirs: Array[AMDirectory]) -> void:
+	_DirectoriesToDelete = dirs
+	_DeleteDirDialog.popup_centered()
 
-func _on_DirectoryMoveDialog_move_item(parent_id: int, id: int, is_dir: bool) -> void:
-	_asset_dropped(parent_id, id, is_dir)
-
-func _on_DirectoryMoveDialog_refresh_ui():
+func _on_refresh_ui():
 	_card_pressed(AssetsLibrary.current_directory, true)
 
 # ---------------------------------------------
@@ -264,16 +236,15 @@ func _on_DirectoryMoveDialog_refresh_ui():
 # ---------------------------------------------
 
 # Creates a new card object.
-func _create_card():
-	var card = CARD.instance()
-	card.connect("pressed", self, "_card_pressed")
-	card.connect("delete_card", self, "_delete_card")
-	card.connect("asset_dropped", self, "_asset_dropped")
-	card.connect("export_assets", self, "_export_assets")
-	card.connect("open_containing_folder", self, "_card_pressed", [true])
-	card.connect("move_to_directory_pressed", self, "_move_to_directory_pressed")
-	card.connect("remove_link", self, "_remove_link")
-	card.connect("show_links", self, "_show_links")
+func _create_card() -> AssetCard:
+	var card : AssetCard = ASSET_CARD.instantiate()
+	card.connect("pressed", Callable(self, "_card_pressed"))
+	card.connect("delete_card", Callable(self, "_delete_card"))
+	card.connect("refresh_ui", Callable(self, "_on_refresh_ui"))
+	card.connect("export_assets", Callable(self, "_export_assets"))
+	card.connect("open_containing_folder", Callable(self, "_card_pressed").bind(true))
+	card.connect("move_to_directory_pressed", Callable(self, "_move_to_directory_pressed"))
+	card.connect("show_links", Callable(self, "_show_links"))
 	return card
 
 # Shows the name dialog for a new directory.
@@ -282,13 +253,13 @@ func _on_CreateDir_pressed() -> void:
 
 # Creates a new directory.
 func _on_InputBox_name_entered(name : String) -> void:
-	if name.empty():
+	if name.is_empty():
 		return
 		
 	if AssetsLibrary.get_directory_id(AssetsLibrary.current_directory, name) == 0:
 		var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, name)
 		if dir != 0:
-			var tmp
+			var tmp: AssetCard
 			
 			# Checks if we can resuse a card or a new one needs to be created.
 			if (_Cards.get_child_count() == 0) || (_Cards.get_child_count() < ITEMS_PER_PAGE):
@@ -299,16 +270,18 @@ func _on_InputBox_name_entered(name : String) -> void:
 			
 			# A new directory will be move to the first place in the container.
 			_Cards.move_child(tmp, 0)
-			tmp.set_texture(FOLDER_ICON)
-			tmp.set_title(name)
-			tmp.id = dir
-			tmp.is_dir = true
+			
+			var card := AMDirectory.new()
+			card.id = dir
+			card.name = name
+			tmp.dataset = card
+			tmp.set_parent_folder(AssetsLibrary.current_directory)
 			tmp.visible = true
 		else:
 			# TODO: Errorhandling
 			pass
 	else:
-		_InfoDialog.dialog_text = tr("Directory '%s' already exists in the current directory!") % name
+		_InfoDialog.dialog_text = tr("Dir '%s' already exists in the current directory!") % name
 		_InfoDialog.popup_centered()
 
 # Leave a subdirectory.
@@ -317,15 +290,23 @@ func _on_Back_pressed() -> void:
 
 # Deletes a directory.
 func _on_DeleteDirDialog_confirmed() -> void:
-	if AssetsLibrary.delete_directory(_DirectoryToDelete):
-		# Go back into the root directory.
-		if AssetsLibrary.current_directory == _DirectoryToDelete:
-			_card_pressed(0, true)
-		else:
-			_card_pressed(AssetsLibrary.current_directory, true)
+	var gotoroot = false
+	if _DirectoriesToDelete.size() > 1:
+		for dir in _DirectoriesToDelete:
+			if dir.id == AssetsLibrary.current_directory:
+				gotoroot = true
+				break 
+		
+		AssetsLibrary.bulk_delete_directories(_DirectoriesToDelete)
+	elif _DirectoriesToDelete.size() == 1:
+		gotoroot = _DirectoriesToDelete[0].id == AssetsLibrary.current_directory
+		AssetsLibrary.delete_directory(_DirectoriesToDelete[0].id)
+	
+	# Go back into the root directory.
+	if gotoroot:
+		_card_pressed(0, true)
 	else:
-		# Todo: Errorhandling
-		pass
+		_card_pressed(AssetsLibrary.current_directory, true)
 
 # Updates the content of the page, if the user starts typing in the search bar.
 func _on_Search_text_changed(_new_text: String) -> void:
@@ -341,7 +322,7 @@ func _on_OpenLibrary_pressed() -> void:
 func _on_CloseLib_pressed() -> void:
 	ProgramManager.settings.last_opened = ""
 	AssetsLibrary.close()
-	get_tree().change_scene("res://Startscreen/StartScreen.tscn")
+	get_tree().change_scene_to_file("res://Startscreen/StartScreen.tscn")
 
 func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.BROWSER_SCREEN

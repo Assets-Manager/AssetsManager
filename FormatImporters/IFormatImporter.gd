@@ -1,9 +1,8 @@
 class_name IFormatImporter
-extends Reference
+extends RefCounted
 
 var _Library : Node
 var _TypeId : int = -1
-var _Directory : Directory = Directory.new()
 
 # Called by the AssetsLibrary
 # Can be overwritten must call the base method
@@ -26,14 +25,14 @@ static func get_extensions() -> Array:
 	return []
 
 # Imports a new asset
-func import(path: String, update_id : int) -> Dictionary:
-	var thumbnail : Texture = render_thumbnail(path)
-	var thumbnail_path : String = _Library.get_thumbnail_path() + "/" + _generate_thumbnail_name(path)
+func import(path: String, update_id : int) -> AMAsset:
+	var thumbnail : Texture2D = render_thumbnail(path)
+	var thumbnail_path : String = _Library.get_thumbnail_path().path_join(_generate_thumbnail_name(path))
 	var can_proceed : bool = false
 	
 	# Saves the thumbnail to the drive
 	if thumbnail:
-		can_proceed = thumbnail.get_data().save_png(thumbnail_path) == OK
+		can_proceed = thumbnail.get_image().save_png(thumbnail_path) == OK
 	else:
 		can_proceed = true
 	
@@ -42,15 +41,21 @@ func import(path: String, update_id : int) -> Dictionary:
 			path = _Library.generate_and_migrate_assets_path(path, update_id)
 			if update_id != 0:
 				if !_Library.update_asset(update_id, path, thumbnail_path.get_file() if thumbnail else null, get_type_id()):
-					return {}
+					return null
 			else:
 				update_id = _Library.add_asset(path, thumbnail_path.get_file() if thumbnail else null, get_type_id())
 			
 			if update_id != 0:
 				var decoded_file = _Library.decode_asset_name(path)
-				return {"id": update_id, "name": decoded_file[1], "thumbnail": thumbnail}
-		_Directory.remove(thumbnail_path)
-	return {}
+				var ret = AMAsset.new()
+				ret.id = update_id
+				ret.filename = decoded_file[1]
+				ret.thumbnail = thumbnail
+				ret.last_modified = FileAccess.get_modified_time(path)
+				ret.type = get_type_id()
+				return ret
+		DirAccess.remove_absolute(thumbnail_path)
+	return null
 
 # Generates a unique name for the thumbnail.
 # The generated hash is only needed for a unique name and is not intended to be secure.
@@ -60,7 +65,7 @@ func _generate_thumbnail_name(path : String) -> String:
 # Moves the file into the assets directory.
 # Can be overwritten
 func _import_asset(path : String, update_id : int) -> int:
-	return _Directory.rename(path, _Library.generate_and_migrate_assets_path(path, update_id))
+	return DirAccess.rename_absolute(path, _Library.generate_and_migrate_assets_path(path, update_id))
 
 # Renders the thumbnail of a given path.
 # Called in sub-thread.
@@ -68,5 +73,5 @@ func _import_asset(path : String, update_id : int) -> int:
 # Params:
 #	- path: Path of the file
 # Returns the newly rendered thumbnail.
-func render_thumbnail(path: String) -> Texture:
+func render_thumbnail(path: String) -> Texture2D:
 	return null

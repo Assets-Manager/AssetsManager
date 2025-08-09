@@ -1,15 +1,15 @@
-extends WindowDialog
+extends Window
 
 signal name_entered(name)
 
-onready var _Text := $CenterContainer/VBoxContainer/LineEdit
+@onready var _Text := $CenterContainer/MarginContainer/VBoxContainer/LineEdit
 
 func _ready() -> void:
-	get_close_button().hide()
-	get_viewport().connect("size_changed", self, "_size_changed")
+	unresizable = true
+	get_tree().get_root().get_viewport().size_changed.connect(_size_changed)
 	
 func _size_changed() -> void:
-	rect_position = get_viewport_rect().size * 0.5 - rect_size * 0.5
+	position = get_tree().get_root().get_viewport().size * 0.5 - size * 0.5
 
 func _on_Cancel_pressed() -> void:
 	hide()

@@ -1,9 +1,9 @@
-extends WindowDialog
+extends Window
 
 const FOLDER_ICON = preload("res://Assets/Material Icons/folder.svg")
 
-onready var _Directories := $MarginContainer/VBoxContainer/Directories
-onready var _Unlink := $MarginContainer/VBoxContainer/HBoxContainer/Unlink
+@onready var _Directories := $MarginContainer/VBoxContainer/Directories
+@onready var _Unlink := $MarginContainer/VBoxContainer/HBoxContainer/Unlink
 
 var _SelectedDirectory : int = 0
 var _SelectedIndex : int = 0
@@ -18,7 +18,7 @@ func set_asset_id(id : int) -> void:
 		# Builds the dir path
 		var path = dir.name
 		var parent_dir := AssetsLibrary.get_parent_dir(dir.id)
-		while !parent_dir.empty():
+		while parent_dir:
 			path = parent_dir.name + "/" + path
 			parent_dir = AssetsLibrary.get_parent_dir(parent_dir.id)
 		
@@ -36,7 +36,7 @@ func _on_Cancel_pressed():
 	hide()
 
 func _on_Unlink_pressed():
-	AssetsLibrary.unlink_asset(_SelectedDirectory, _AssetId)
+	AssetsLibrary.unlink_asset(_AssetId, _SelectedDirectory)
 	_Directories.remove_item(_SelectedIndex)
 	_reset()
 	

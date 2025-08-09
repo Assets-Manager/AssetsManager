@@ -14,14 +14,14 @@ signal changed_asset(path)
 signal deleted_asset(path)
 signal renamed_asset(old_path, new_path)
 
-onready var _DirWatcher : GDFilewatcher = GDFilewatcher.new()
+@onready var _DirWatcher : GDFilewatcher = GDFilewatcher.new()
 var _OldName : String = ""
 var paused : bool = false
 
 var supported_extensions : Array = []
 
 func _ready() -> void:
-	_DirWatcher.connect("file_changed", self, "_file_changed", [], Object.CONNECT_DEFERRED)
+	_DirWatcher.connect("file_changed", Callable(self, "_file_changed").bind(), Object.CONNECT_DEFERRED)
 
 func open(path : String) -> void:
 	_DirWatcher.open(path)

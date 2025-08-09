@@ -1,15 +1,13 @@
-extends WindowDialog
+extends Window
 
-onready var _Progressbar := $CenterContainer/VBoxContainer/ProgressBar
+@onready var _Progressbar := $CenterContainer/MarginContainer/VBoxContainer/ProgressBar
 
 func _ready() -> void:
-	get_close_button().hide()
-	rect_size = rect_min_size
-	
-	get_viewport().connect("size_changed", self, "_size_changed")
+	unresizable = true
+	get_tree().get_root().get_viewport().size_changed.connect(_size_changed)
 	
 func _size_changed() -> void:
-	rect_position = get_viewport_rect().size * 0.5 - rect_size * 0.5
+	position = get_tree().get_root().get_viewport().size * 0.5 - size * 0.5
 	
 func set_total_files(value : int) -> void:
 	_Progressbar.max_value = value

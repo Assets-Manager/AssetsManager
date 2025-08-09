@@ -1,18 +1,18 @@
-tool
+@tool
 extends VBoxContainer
 
 signal value_changed(value)
 
-export(String) var title = "" setget set_title
-export(Vector3) var value := Vector3.ZERO setget set_value
-export(Vector3) var default_value := Vector3.ZERO
-export(bool) var enabled := true setget set_enabled
+@export var title: String = "": set = set_title
+@export var value := Vector3.ZERO: set = set_value
+@export var default_value := Vector3.ZERO
+@export var enabled := true: set = set_enabled
 
-onready var _Name := $HBoxContainer3/Name
-onready var _Revert := $HBoxContainer3/Revert
-onready var _XValue := $HBoxContainer2/NumericEdit
-onready var _YValue := $HBoxContainer2/NumericEdit2
-onready var _ZValue := $HBoxContainer2/NumericEdit3
+@onready var _Name := $HBoxContainer3/Name
+@onready var _Revert := $HBoxContainer3/Revert
+@onready var _XValue := $HBoxContainer2/NumericEdit
+@onready var _YValue := $HBoxContainer2/NumericEdit2
+@onready var _ZValue := $HBoxContainer2/NumericEdit3
 
 func set_title(val : String) -> void:
 	title = val
@@ -31,13 +31,13 @@ func set_enabled(val : bool) -> void:
 
 func _ready() -> void:
 	_Name.text = tr(title)
-	_Revert.icon = get_icon("reload", "FileDialog")
+	_Revert.icon = get_theme_icon("reload", "FileDialog")
 	set_enabled(enabled)
 	set_value(default_value)
 	
-	_XValue.connect("value_changed", self, "_vector_value_changed", [0])
-	_YValue.connect("value_changed", self, "_vector_value_changed", [1])
-	_ZValue.connect("value_changed", self, "_vector_value_changed", [2])
+	_XValue.connect("value_changed", Callable(self, "_vector_value_changed").bind(0))
+	_YValue.connect("value_changed", Callable(self, "_vector_value_changed").bind(1))
+	_ZValue.connect("value_changed", Callable(self, "_vector_value_changed").bind(2))
 
 func set_value(val : Vector3) -> void:
 	value = val

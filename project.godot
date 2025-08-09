@@ -6,126 +6,34 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
-
-_global_script_classes=[ {
-"base": "HBoxContainer",
-"class": "AssetInfoCard",
-"language": "GDScript",
-"path": "res://Browser/Dialogs/AssetInfoCard.gd"
-}, {
-"base": "Reference",
-"class": "AssetsDatabase",
-"language": "GDScript",
-"path": "res://Filesystem/AssetsDatabase.gd"
-}, {
-"base": "WindowDialog",
-"class": "CustomFileDialog",
-"language": "GDScript",
-"path": "res://addons/tooluis/Scripts/CustomFileDialog.gd"
-}, {
-"base": "Node",
-"class": "DirectoryWatcher",
-"language": "GDScript",
-"path": "res://Filesystem/DirectoryWatcher.gd"
-}, {
-"base": "Resource",
-"class": "FileDialogConfig",
-"language": "GDScript",
-"path": "res://addons/tooluis/Scripts/FileDialogConfig.gd"
-}, {
-"base": "Reference",
-"class": "GDAssimpLoader",
-"language": "NativeScript",
-"path": "res://Native/GDAssimpLoader.gdns"
-}, {
-"base": "Reference",
-"class": "GDAudioWaveRenderer",
-"language": "NativeScript",
-"path": "res://Native/GDAudioWaveRenderer.gdns"
-}, {
-"base": "Reference",
-"class": "GDFilewatcher",
-"language": "NativeScript",
-"path": "res://Native/GDFilewatcher.gdns"
-}, {
-"base": "Node",
-"class": "GDNativeFileDialog",
-"language": "NativeScript",
-"path": "res://Native/GDNativeFileDialog.gdns"
-}, {
-"base": "Control",
-"class": "GodotTour",
-"language": "GDScript",
-"path": "res://addons/godottour/GodotTour.gd"
-}, {
-"base": "Reference",
-"class": "IFormatImporter",
-"language": "GDScript",
-"path": "res://FormatImporters/IFormatImporter.gd"
-}, {
-"base": "Spatial",
-"class": "OriginView",
-"language": "GDScript",
-"path": "res://3DEditor/ObjectProperties/OriginView.gd"
-}, {
-"base": "Reference",
-"class": "SQLiteWrapper",
-"language": "GDScript",
-"path": "res://addons/godot-sqlite/godot-sqlite-wrapper.gd"
-}, {
-"base": "Resource",
-"class": "Settings",
-"language": "GDScript",
-"path": "res://Settings.gd"
-}, {
-"base": "Object",
-"class": "SpatialUtils",
-"language": "GDScript",
-"path": "res://3DEditor/SpatialUtils.gd"
-} ]
-_global_script_class_icons={
-"AssetInfoCard": "",
-"AssetsDatabase": "",
-"CustomFileDialog": "",
-"DirectoryWatcher": "",
-"FileDialogConfig": "",
-"GDAssimpLoader": "",
-"GDAudioWaveRenderer": "",
-"GDFilewatcher": "",
-"GDNativeFileDialog": "",
-"GodotTour": "",
-"IFormatImporter": "",
-"OriginView": "",
-"SQLiteWrapper": "",
-"Settings": "",
-"SpatialUtils": ""
-}
+config_version=5
 
 [application]
 
 config/name="Assets Manager"
+config/version="1.2.0"
 run/main_scene="res://Startscreen/StartScreen.tscn"
+config/features=PackedStringArray("4.4")
+boot_splash/bg_color=Color(0.0941176, 0.0901961, 0.121569, 1)
 boot_splash/image="res://Banner.png"
-boot_splash/bg_color=Color( 0.0941176, 0.0901961, 0.121569, 1 )
 config/icon="res://icon.png"
 config/windows_native_icon="res://icon.ico"
-config/version="1.2.0"
 
 [autoload]
 
 AssetsLibrary="*res://Filesystem/AssetsLibrary.gd"
 ProgramManager="*res://ProgramManager.gd"
+BulkHelper="*res://Filesystem/BulkHelper.gd"
 
 [editor_plugins]
 
-enabled=PoolStringArray( "res://addons/godot-sqlite/plugin.cfg", "res://addons/godottour/plugin.cfg", "res://addons/tooluis/plugin.cfg" )
+enabled=PackedStringArray("res://addons/godottour/plugin.cfg", "res://addons/tooluis/plugin.cfg")
 
 [gui]
 
-common/drop_mouse_on_gui_input_disabled=true
 theme/custom="res://Assets/Theme/theme.theme"
 theme/custom_font="res://Assets/Theme/noto-sans-regular.tres"
+common/drop_mouse_on_gui_input_disabled=true
 
 [physics]
 
@@ -133,6 +41,8 @@ common/enable_pause_aware_picking=true
 
 [rendering]
 
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.0941176, 0.0901961, 0.121569, 1)
+environment/defaults/default_environment="res://default_env.tres"
 gles3/shaders/shader_compilation_mode=2
-environment/default_clear_color=Color( 0.0941176, 0.0901961, 0.121569, 1 )
-environment/default_environment="res://default_env.tres"

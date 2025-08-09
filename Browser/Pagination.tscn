@@ -1,52 +1,52 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=4 format=3 uid="uid://b8pl3e1q7kuwc"]
 
-[ext_resource path="res://Browser/Pagination.gd" type="Script" id=1]
-[ext_resource path="res://Assets/Material Icons/keyboard_arrow_left.svg" type="Texture" id=2]
-[ext_resource path="res://Assets/Material Icons/keyboard_arrow_right.svg" type="Texture" id=3]
+[ext_resource type="Script" uid="uid://bk6rijgroro0p" path="res://Browser/Pagination.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dtbkx52i0n8o2" path="res://Assets/Material Icons/keyboard_arrow_left.svg" id="2"]
+[ext_resource type="Texture2D" uid="uid://f5x3uovurnt" path="res://Assets/Material Icons/keyboard_arrow_right.svg" id="3"]
 
 [node name="Pagination" type="HBoxContainer"]
-margin_right = 501.0
-margin_bottom = 40.0
+offset_right = 501.0
+offset_bottom = 40.0
 size_flags_horizontal = 3
-script = ExtResource( 1 )
+script = ExtResource("1")
 
 [node name="Control" type="Control" parent="."]
-margin_right = 335.0
-margin_bottom = 40.0
+offset_right = 335.0
+offset_bottom = 40.0
 size_flags_horizontal = 3
 
 [node name="Label" type="Label" parent="."]
-margin_left = 339.0
-margin_top = 8.0
-margin_right = 377.0
-margin_bottom = 31.0
+offset_left = 339.0
+offset_top = 8.0
+offset_right = 377.0
+offset_bottom = 31.0
 text = "Page"
 
 [node name="Page" type="Label" parent="."]
-margin_left = 381.0
-margin_top = 8.0
-margin_right = 413.0
-margin_bottom = 31.0
+offset_left = 381.0
+offset_top = 8.0
+offset_right = 413.0
+offset_bottom = 31.0
 text = "0 / 0"
 
 [node name="Left" type="Button" parent="."]
-margin_left = 417.0
-margin_right = 457.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 40, 0 )
+offset_left = 417.0
+offset_right = 457.0
+offset_bottom = 40.0
+custom_minimum_size = Vector2(40, 0)
 mouse_default_cursor_shape = 2
-icon = ExtResource( 2 )
-icon_align = 1
+icon = ExtResource("2")
+icon_alignment = 1
 expand_icon = true
 
 [node name="Right" type="Button" parent="."]
-margin_left = 461.0
-margin_right = 501.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 40, 0 )
+offset_left = 461.0
+offset_right = 501.0
+offset_bottom = 40.0
+custom_minimum_size = Vector2(40, 0)
 mouse_default_cursor_shape = 2
-icon = ExtResource( 3 )
-icon_align = 1
+icon = ExtResource("3")
+icon_alignment = 1
 expand_icon = true
 
 [connection signal="pressed" from="Left" to="." method="_on_Left_pressed"]

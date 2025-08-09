@@ -1,31 +1,36 @@
 extends CenterContainer
 
-onready var _Recent := $VBoxContainer/ScrollContainer/Recent
-onready var _NativeDialogs := $NativeDialogs
-onready var _InfoDialog := $CanvasLayer/InfoDialog
-onready var _DisclaimerDialog := $CanvasLayer/DisclaimerDialog
-onready var _GodotTour := $CanvasLayer/GodotTour
+@onready var _Recent := $VBoxContainer/ScrollContainer/Recent
+@onready var _NativeDialogs : FileDialog = $NativeDialogs
+@onready var _InfoDialog := $CanvasLayer/InfoDialog
+@onready var _DisclaimerDialog := $CanvasLayer/DisclaimerDialog
+@onready var _GodotTour := $CanvasLayer/GodotTour
 
 func _ready():
 	if !ProgramManager.settings.disclaimer_accepted:
+		_DisclaimerDialog.hide()
+		_DisclaimerDialog.force_native = true
 		_DisclaimerDialog.popup_centered()
 	
 	# Reopens the last loaded library.
-	if !ProgramManager.settings.last_opened.empty():
+	if !ProgramManager.settings.last_opened.is_empty():
 		if AssetsLibrary.open(ProgramManager.settings.last_opened):
-			get_tree().change_scene("res://Browser/Browser.tscn")
+			call_deferred("_switch_scene")
 			return
 	
 	# Loads the recent libraries list
 	for recent in ProgramManager.settings.recent_asset_libraries:
 		var tmp := LinkButton.new()
 		tmp.text = recent.get_file()
-		tmp.hint_tooltip = recent
-		tmp.add_color_override("font_color", Color("#6e9dff"))
-		tmp.connect("pressed", self, "_open_recent", [recent])
+		tmp.tooltip_text = recent
+		tmp.add_theme_color_override("font_color", Color("#6e9dff"))
+		tmp.connect("pressed", Callable(self, "_open_recent").bind(recent))
 		_Recent.add_child(tmp)
 		
-	_start_tour()
+	call_deferred("_start_tour")
+
+func _switch_scene() -> void:
+	get_tree().change_scene_to_file("res://Browser/Browser.tscn")
 
 func _start_tour():
 	if ProgramManager.settings.disclaimer_accepted and (ProgramManager.settings.tutorial_step < ProgramManager.settings.TutorialStep.LIBRARY_SCREEN):
@@ -35,17 +40,18 @@ func _start_tour():
 		_GodotTour.visible = false
 
 func _on_NewProject_pressed():
-	_NativeDialogs.dialog_type = 2
-	var path : PoolStringArray = _NativeDialogs.show_modal()
-	if !path.empty():
-		_try_open_library(path[0], !_check_dir_is_empty(path[0]), "Directory must be empty!")
+	_NativeDialogs.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	_NativeDialogs.popup_centered()
+	var path : String = await _NativeDialogs.dir_selected
+	if !path.is_empty():
+		_try_open_library(path, !_check_dir_is_empty(path), "Dir must be empty!")
 
 func _on_OpenProject_pressed():
-	_NativeDialogs.dialog_type = 2
-	var path : PoolStringArray = _NativeDialogs.show_modal()
-	var file : File = File.new()
-	if !path.empty():
-		_try_open_library(path[0], !file.file_exists(path[0] + "/assets.db"), "Not a valid asset library!")
+	_NativeDialogs.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	_NativeDialogs.popup_centered()
+	var path : String = await _NativeDialogs.dir_selected
+	if !path.is_empty():
+		_try_open_library(path, !FileAccess.file_exists(path.path_join("assets.db")), "Not a valid asset library!")
 
 # Tries to open the library or shows an error.
 func _try_open_library(path: String, show_error : bool, error : String) -> void:
@@ -56,14 +62,14 @@ func _try_open_library(path: String, show_error : bool, error : String) -> void:
 		if AssetsLibrary.open(path):	# Loads the library
 			if ProgramManager.settings.recent_asset_libraries.find(path) == -1:
 				ProgramManager.settings.recent_asset_libraries.append(path)
-			get_tree().change_scene("res://Browser/Browser.tscn")
+			get_tree().change_scene_to_file("res://Browser/Browser.tscn")
 		else:
 			_InfoDialog.dialog_text = tr("Failed to open library!")
 			_InfoDialog.popup_centered()
 
 func _check_dir_is_empty(path : String) -> bool:
-	var dir = Directory.new()
-	if dir.open(path) == OK:
+	var dir = DirAccess.open(path)
+	if dir:
 		dir.list_dir_begin()
 		var file_name = dir.get_next()
 		while file_name != "":
@@ -77,8 +83,7 @@ func _check_dir_is_empty(path : String) -> bool:
 	return true
 
 func _open_recent(path: String):
-	var file : File = File.new()
-	_try_open_library(path, !file.file_exists(path + "/assets.db"), "Not a valid asset library!")
+	_try_open_library(path, !FileAccess.file_exists(path.path_join("assets.db")), "Not a valid asset library!")
 
 func _on_DisclaimerDialog_popup_hide():
 	_start_tour()
