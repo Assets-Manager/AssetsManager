@@ -1,0 +1,94 @@
+[gd_scene load_steps=7 format=3 uid="uid://bg1ndjavb6us7"]
+
+[ext_resource type="Script" uid="uid://doeclqtxqculf" path="res://Browser/TagManager.gd" id="1_5blek"]
+[ext_resource type="Texture2D" uid="uid://cl6qh7er4bvqw" path="res://Assets/Material Icons/new_label.svg" id="1_a2lnj"]
+[ext_resource type="Texture2D" uid="uid://dspvd1yb4pw3v" path="res://Assets/Material Icons/delete.svg" id="2_6vssg"]
+[ext_resource type="PackedScene" uid="uid://ejgapkchkigb" path="res://Browser/Dialogs/TagManager/EditTagDialog.tscn" id="4_ax4pw"]
+[ext_resource type="Texture2D" uid="uid://bcoxi7g7564rk" path="res://Assets/Material Icons/save.svg" id="4_nyem8"]
+[ext_resource type="Script" uid="uid://vvlqtk6vu0dh" path="res://Browser/Dialogs/ConfirmationDialog.gd" id="5_6cc5u"]
+
+[node name="TagManager" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+script = ExtResource("1_5blek")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="AddTag" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+tooltip_text = "Add a new tag"
+icon = ExtResource("1_a2lnj")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Delete" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+tooltip_text = "Delete selected tag"
+disabled = true
+icon = ExtResource("2_6vssg")
+icon_alignment = 1
+expand_icon = true
+
+[node name="ItemList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 1
+allow_reselect = true
+
+[node name="ToggleDelete" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/icon_max_width = 24
+toggle_mode = true
+text = "Remove tags mode"
+icon = ExtResource("2_6vssg")
+
+[node name="SaveTags" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/icon_max_width = 24
+disabled = true
+text = "Save tag changes"
+icon = ExtResource("4_nyem8")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="EditTagDialog" parent="CanvasLayer" instance=ExtResource("4_ax4pw")]
+visible = false
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="CanvasLayer"]
+title = ""
+ok_button_text = "Yes"
+dialog_text = "Are you sure you want to delete all selected tags? This can't be undone!"
+cancel_button_text = "No"
+script = ExtResource("5_6cc5u")
+
+[node name="ConfirmationDialog2" type="ConfirmationDialog" parent="CanvasLayer"]
+title = ""
+ok_button_text = "Yes"
+dialog_text = "At least one selected asset is a directory. 
+Do you want to apply the current action to all subfiles and subdirectories?"
+cancel_button_text = "No"
+script = ExtResource("5_6cc5u")
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/AddTag" to="." method="_on_add_tag_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/Delete" to="." method="_on_delete_pressed"]
+[connection signal="empty_clicked" from="VBoxContainer/ItemList" to="." method="_on_item_list_empty_clicked"]
+[connection signal="item_activated" from="VBoxContainer/ItemList" to="." method="_on_item_list_item_activated"]
+[connection signal="multi_selected" from="VBoxContainer/ItemList" to="." method="_on_item_list_multi_selected"]
+[connection signal="pressed" from="VBoxContainer/SaveTags" to="." method="_on_save_tags_pressed"]
+[connection signal="visibility_changed" from="CanvasLayer/EditTagDialog" to="." method="_on_edit_tag_dialog_visibility_changed"]
+[connection signal="confirmed" from="CanvasLayer/ConfirmationDialog" to="." method="_on_confirmation_dialog_confirmed"]
+[connection signal="canceled" from="CanvasLayer/ConfirmationDialog2" to="." method="_on_confirmation_dialog_2_canceled"]
+[connection signal="confirmed" from="CanvasLayer/ConfirmationDialog2" to="." method="_on_confirmation_dialog_2_confirmed"]

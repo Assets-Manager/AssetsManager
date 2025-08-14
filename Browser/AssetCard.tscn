@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://dqfu6rtrpqoc2"]
+[gd_scene load_steps=13 format=3 uid="uid://dqfu6rtrpqoc2"]
 
 [ext_resource type="Script" uid="uid://bvyfv8sdhgx8b" path="res://Browser/AssetCard.gd" id="1_ujriv"]
 [ext_resource type="Texture2D" uid="uid://dspvd1yb4pw3v" path="res://Assets/Material Icons/delete.svg" id="2_rxmip"]
 [ext_resource type="Texture2D" uid="uid://bcoxi7g7564rk" path="res://Assets/Material Icons/save.svg" id="3_k1mwu"]
 [ext_resource type="Texture2D" uid="uid://0npsqre46v5b" path="res://Assets/Material Icons/drive_file_move.svg" id="4_1lcht"]
+[ext_resource type="Texture2D" uid="uid://cu08nf7hsos4b" path="res://Assets/Material Icons/info.svg" id="4_rxmip"]
 [ext_resource type="Texture2D" uid="uid://cbk6ihl3h1bi0" path="res://Assets/Material Icons/folder_open.svg" id="5_jt6uq"]
 [ext_resource type="Texture2D" uid="uid://oay7giqe3jmq" path="res://Assets/Material Icons/link.svg" id="6_5dx4r"]
 [ext_resource type="Texture2D" uid="uid://5sa4vonvelbh" path="res://Assets/Material Icons/link_off.svg" id="7_vmayn"]
@@ -100,6 +101,7 @@ custom_minimum_size = Vector2(33, 33)
 layout_mode = 0
 anchor_right = 1.0
 offset_bottom = 33.0
+theme_override_constants/separation = 2
 
 [node name="Delete" type="Button" parent="Card/HBoxContainer"]
 custom_minimum_size = Vector2(33, 33)
@@ -116,6 +118,14 @@ layout_mode = 2
 tooltip_text = "Export asset(s)"
 mouse_default_cursor_shape = 2
 icon = ExtResource("3_k1mwu")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Info" type="Button" parent="Card/HBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+icon = ExtResource("4_rxmip")
 icon_alignment = 1
 expand_icon = true
 
@@ -149,6 +159,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -33.0
 mouse_filter = 2
+theme_override_constants/separation = 2
 
 [node name="Control" type="Control" parent="Card/HBoxContainer2"]
 layout_mode = 2
@@ -190,8 +201,10 @@ libraries = {
 [connection signal="gui_input" from="Card/MarginContainer/VBoxContainer/Title" to="." method="_on_title_gui_input"]
 [connection signal="pressed" from="Card/HBoxContainer/Delete" to="." method="_on_Delete_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer/Export" to="." method="_on_Export_pressed"]
+[connection signal="pressed" from="Card/HBoxContainer/Info" to="." method="_on_info_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer/Move" to="." method="_on_Move_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer/OpenFolder" to="." method="_on_OpenFolder_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer2/ShowLinks" to="." method="_on_ShowLinks_pressed"]
 [connection signal="pressed" from="Card/HBoxContainer2/RemoveLink" to="." method="_on_RemoveLink_pressed"]
+[connection signal="gui_input" from="Card/EditField" to="." method="_on_edit_field_gui_input"]
 [connection signal="text_submitted" from="Card/EditField" to="." method="_on_edit_field_text_submitted"]

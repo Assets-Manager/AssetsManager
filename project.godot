@@ -23,7 +23,7 @@ config/windows_native_icon="res://icon.ico"
 
 AssetsLibrary="*res://Filesystem/AssetsLibrary.gd"
 ProgramManager="*res://ProgramManager.gd"
-BulkHelper="*res://Filesystem/BulkHelper.gd"
+BrowserManager="*res://Filesystem/BrowserManager.gd"
 
 [editor_plugins]
 

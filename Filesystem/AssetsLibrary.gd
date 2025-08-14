@@ -67,7 +67,7 @@ func _load_importers() -> void:
 					var id : int = _get_or_add_asset_type(script.get_type())
 					if id != 0:
 						var importer : IFormatImporter = script.new()
-						supported_extensions.append_array(importer.get_extensions())
+						supported_extensions.append_array(script.get_extensions())
 						importer.register(self, id)
 						_Importers[script.get_type()] = importer
 						
@@ -166,9 +166,9 @@ func get_thumbnail_path() -> String:
 	
 # Gets the id of a directory.
 # The parentId of the directory is needed, since the dir name isn't unique.
-func get_directory_id(parentId : int, name : String) -> int:
+func get_directory_id(parentId : int, p_name : String) -> int:
 	var result : int = 0
-	var bindings : Array = [name]
+	var bindings : Array = [p_name]
 	var query = "parent_id IS NULL"
 	
 	# If the parentId isn't 0, add the id to the query.
@@ -222,14 +222,14 @@ func _build_assets_path(subpath : String) -> String:
 
 # Gets the id for an asset type.
 # Creates a new database entry, if the type doesn't exists.
-func _get_or_add_asset_type(name : String) -> int:
+func _get_or_add_asset_type(p_name : String) -> int:
 	# First check, if the type already exists.
-	var result = _AssetsDatabase.query_with_bindings("SELECT id FROM asset_types WHERE name = ?", [name])
+	var result = _AssetsDatabase.query_with_bindings("SELECT id FROM asset_types WHERE name = ?", [p_name])
 	if !result.is_empty():
 		return result[0].id
 	else:
 		# Otherwise create a new entry.
-		if _AssetsDatabase.insert("asset_types", {"name": name}):
+		if _AssetsDatabase.insert("asset_types", {"name": p_name}):
 			return _AssetsDatabase.get_last_insert_rowid()
 			
 	return 0	# Error
@@ -360,9 +360,9 @@ func add_asset(path: String, thumbnailName, type) -> int:
 
 # Creates a new directory.
 # Directories are purly virtual and doesn't exists on the harddrive.
-func create_directory(parentId : int, name : String) -> int:
+func create_directory(parentId : int, p_name : String) -> int:
 	var result : int = 0
-	if _AssetsDatabase.insert("directories", {"name": name, "parent_id": null if parentId == 0 else parentId}):
+	if _AssetsDatabase.insert("directories", {"name": p_name, "parent_id": null if parentId == 0 else parentId}):
 		result = _AssetsDatabase.get_last_insert_rowid()
 	
 	return result
@@ -425,7 +425,7 @@ func move(src, dest: int) -> bool:
 		moved_succefully = AssetsLibrary.move_directory(src.id, dest)
 	elif src is AMAsset:
 		# Prevents the asset to be moved into a directory, where it is already in.
-		if !AssetsLibrary.is_asset_in_dir(dest, src.id):
+		if !AssetsLibrary.is_asset_in_dir(src.id, dest):
 			moved_succefully = AssetsLibrary.move_asset(src.id, dest)
 			
 	return moved_succefully
@@ -494,6 +494,112 @@ func rename(id: int, new_name: String, is_dir: bool) -> bool:
 	return result
 
 # ---------------------------------------------
+# 				   Tags
+# ---------------------------------------------
+
+## Gets a list of all tags
+func get_all_tags() -> Array[AMTag]:
+	var result : Array[AMTag] = []
+	var qresults := _AssetsDatabase.query_with_bindings("SELECT * FROM tags ORDER BY name", [])
+	for qresult in qresults:
+		result.append(_fill_model(AMTag.new(), qresult))
+	
+	return result
+
+## Returns all tags for a given asset
+func get_tags(asset) -> Array[AMTag]:
+	var result : Array[AMTag] = []
+	var join = ""
+	
+	if asset is AMDirectory:
+		join = "LEFT JOIN tag_directory_rel as tr ON (tr.ref_directory_id = ?)"
+	elif asset is AMAsset:
+		join = "LEFT JOIN tag_asset_rel as tr ON (tr.ref_assets_id = ?)"
+		
+	var qresults := _AssetsDatabase.query_with_bindings("""
+		SELECT t.* FROM tags as t
+		%s
+		WHERE t.id = tr.ref_tag_id
+	""" % join, [asset.id])
+	
+	for qresult in qresults:
+		result.push_back(_fill_model(AMTag.new(), qresult))
+		
+	return result
+
+## Adds a tag to the library.
+## [br][br]
+## [b]Return:[/b] Returns the tag with the new database id or null on error.
+func add_tag(tag : AMTag) -> AMTag:
+	if _AssetsDatabase.insert("tags", {"name": tag.name, "description": tag.description if !tag.description.is_empty() else null}):
+		tag.id = _AssetsDatabase.get_last_insert_rowid()
+	else:
+		tag = null
+		
+	return tag
+
+## Updates a tag
+## [br][br]
+## [b]Return:[/b] Returns true on success
+func update_tag(tag : AMTag) -> bool:
+	return _AssetsDatabase.update("tags", "id=%d" % tag.id, {"name": tag.name, "description": tag.description if !tag.description.is_empty() else null})
+
+## Deletes a tag
+## [br][br]
+## [b]Return:[/b] Returns true on success
+func delete_tag(tag: AMTag) -> bool:
+	return _AssetsDatabase.delete("tags", "id=%d" % tag.id)
+
+func _get_directory_assets_and_subdirs_as_models(directory_id: int) -> Array:
+	var result = []
+	var data := _get_directory_assets_and_subdirs(directory_id)
+	for d in data["subdirectories"]:
+		result.push_back(_fill_model(AMDirectory.new(), d))
+		
+	for d in data["assets"]:
+		result.push_back(_fill_model(AMAsset.new(), d))
+		
+	return result
+
+## Adds tags to assets and directories
+func add_tags(assets: Array, tags: Array[AMTag], recursive: bool) -> void:	
+	for asset in assets:
+		if asset is AMAsset:
+			_AssetsDatabase.delete("tag_asset_rel", "ref_assets_id=%d" % asset.id)
+			var rows : Array[Dictionary] = []
+			for tag in tags:
+				rows.push_back({ "ref_tag_id": tag.id, "ref_assets_id": asset.id })
+				
+			_AssetsDatabase.insert_rows("tag_asset_rel", rows)
+		elif asset is AMDirectory:
+			_AssetsDatabase.delete("tag_directory_rel", "ref_directory_id=%d" % asset.id)
+			var rows : Array[Dictionary] = []
+			for tag in tags:
+				rows.push_back({ "ref_tag_id": tag.id, "ref_directory_id": asset.id })
+				
+			_AssetsDatabase.insert_rows("tag_directory_rel", rows)
+			
+			if recursive:
+				add_tags(_get_directory_assets_and_subdirs_as_models(asset.id), tags, recursive)
+
+## Removes tags from assets and directories
+func remove_tags(assets: Array, tags: Array[AMTag], recursive: bool) -> void:	
+	var taglist : String = ""
+	for tag in tags:
+		if !taglist.is_empty():
+			taglist += ","
+		
+		taglist += str(tag.id)
+	
+	for asset in assets:
+		if asset is AMAsset:
+			_AssetsDatabase.delete("tag_asset_rel", "ref_assets_id=%d AND ref_tag_id in (%s)" % [asset.id, taglist])
+		elif asset is AMDirectory:
+			_AssetsDatabase.delete("tag_directory_rel", "ref_directory_id=%d AND ref_tag_id in (%s)" % [asset.id, taglist])
+			
+			if recursive:
+				remove_tags(_get_directory_assets_and_subdirs_as_models(asset.id), tags, recursive)
+# ---------------------------------------------
 # 				   Queries
 # ---------------------------------------------
 
@@ -513,102 +619,147 @@ func get_parent_dir(directoryId: int) -> AMDirectory:
 	
 	return null
 
-# Returns a list which contains AMDirectory and AMAsset objects
-func query_assets(directoryId : int, search: String, skip: int, count: int) -> Array:
-	var result : Array = []
-	var bindings : Array = ['%' + search + '%', skip, count]
-
-	# Builds the query for the directories.
-	var query = "SELECT id, name, parent_id FROM directories WHERE %s name LIKE ? LIMIT ?, ?"
-	if directoryId != 0:
-		query = query % "parent_id = ? AND"
-		bindings.push_front(directoryId)
+## Builds the search query for directories
+## Returns a dictionary {"bindings": Array, "query": String, "join": String}
+func _build_directory_query(search : AMSearch) -> Dictionary:
+	var bindings: Array = []
+	var query: String = "%s"
+	var join: String = ""
+	var recursive: String = ""
+	if !search.search_term.is_empty():
+		query = "%sd.name LIKE ?"
+		
+	# Adds a join condition, to include only directories, which had the given tags assigned
+	var tag_id_list = search.get_tag_ids()
+	if !tag_id_list.is_empty():
+		join = "LEFT JOIN tag_directory_rel as td ON(td.ref_tag_id IN (%s))" % tag_id_list
+		query = query % ("d.id = td.ref_directory_id" + (" AND %s" if search.directory_id != 0 else " %s"))
+	
+	if search.directory_id != 0:
+		if search.search_term.is_empty() && tag_id_list.is_empty():
+			query = query % ("d.parent_id = ?" + (" AND " if !search.search_term.is_empty() else ""))
+			bindings.push_back(search.directory_id)
+		else:
+			# A recursive sql call to create a list of all subdirs for the search
+			recursive = """
+				WITH RECURSIVE dirs AS (
+					SELECT id, parent_id FROM directories
+					WHERE id = %d
+					UNION
+					SELECT d.id, d.parent_id FROM directories as d
+					JOIN dirs ON d.parent_id = dirs.id
+				)
+				""" % search.directory_id
+			
+			query = query % ("d.parent_id IN (SELECT id FROM dirs)" + (" AND " if !search.search_term.is_empty() else ""))
 	else:
 		# The root directory allows for a global search
-		if search.is_empty():
-			query = query % "parent_id IS NULL AND"
+		if search.search_term.is_empty() && tag_id_list.is_empty():
+			query = query % ("d.parent_id IS NULL" + (" AND " if !search.search_term.is_empty() else ""))
 		else:
 			query = query % ""
-
-	# Query all directories.
-	var query_results := _AssetsDatabase.query_with_bindings(query, bindings)
-
-	# Is there room for more?
-	if query_results.size() < count:
-		if query_results.is_empty():
-			# Create some sort of relative skip, since the directories are in a different table.
-			var qresult := _AssetsDatabase.query_with_bindings("SELECT COUNT(1) as count from directories", [])
-			if !qresult.is_empty():
-				skip -= qresult[0].count
-		else:
-			skip = 0
-
-		bindings = ['%' + search + '%', skip, count - query_results.size()]
-		query = "SELECT a.id, a.filename, a.thumbnail %s FROM assets as a %s WHERE %s a.filename LIKE ? LIMIT ?, ?"
-		if directoryId != 0:
-			var list : PackedStringArray = [str(directoryId)]
 			
-			if !search.is_empty():
-				var qresult := _AssetsDatabase.query_with_bindings("SELECT id FROM directories WHERE parent_id = ?", [directoryId])
-				for res in qresult:
-					list.push_back(str(res["id"]))
+	if !search.search_term.is_empty():
+		bindings.push_back("%" + search.search_term + "%")
+	
+	return {"bindings": bindings, "query": query, "join": join, "recursive": recursive}
+	
+## Builds the search query for assets
+## Returns a dictionary {"bindings": Array, "query": String, "join": String, "recursive": String}
+func _build_asset_query(search : AMSearch) -> Dictionary:
+	var bindings: Array = []
+	var query: String = "%s"
+	var join: String = ""
+	var recursive = ""
+	
+	if !search.search_term.is_empty():
+		query = "%sa.filename LIKE ?"
+		
+	# Adds a join condition, to include only assets, which had the given tags assigned
+	var tag_id_list = search.get_tag_ids()
+	if !tag_id_list.is_empty():
+		join = "LEFT JOIN tag_asset_rel as ta ON(ta.ref_tag_id IN (%s)) " % tag_id_list
+		query = query % ("a.id = ta.ref_assets_id" + (" AND %s" if search.directory_id != 0 else " %s"))
+	
+	if search.directory_id != 0:
+		if search.search_term.is_empty() && tag_id_list.is_empty():
+			join += "LEFT JOIN asset_directory_rel as ad ON(ad.ref_directory_id = ?) "
+			bindings.push_back(search.directory_id)
+		else:
+			# A recursive sql call to create a list of all subdirs for the search
+			recursive = """
+				WITH RECURSIVE dirs AS (
+					SELECT id, parent_id FROM directories
+					WHERE id = %d
+					UNION
+					SELECT d.id, d.parent_id FROM directories as d 
+					JOIN dirs ON d.parent_id = dirs.id
+				)
+				""" % search.directory_id
 			
-			query = query % [", b.ref_directory_id as parent_id", "LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id IN (%s))" % ",".join(list), "a.id = b.ref_assets_id AND"]
-			#bindings.push_front(list)
+			join += "LEFT JOIN asset_directory_rel as ad ON(ad.ref_directory_id IN (SELECT id FROM dirs)) "
+		query = query % ("a.id = ad.ref_assets_id" + (" AND " if !search.search_term.is_empty() else ""))
+	else:
+		join += "LEFT JOIN asset_directory_rel as ad ON(ad.ref_assets_id = a.id)"
+		
+		# The root directory allows for a global search
+		if search.search_term.is_empty() && tag_id_list.is_empty():
+			query = query % ("ad.ref_directory_id IS NULL" + (" AND " if !search.search_term.is_empty() else ""))
 		else:
-			# The root directory allows for a global search
-			if search.is_empty():
-				query = query % ["", "LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", "b.ref_directory_id IS NULL AND"]
-			else:	# For open containing folder.
-				query = query % [", b.ref_directory_id as parent_id", "LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id)", ""]
+			query = query % ""
+	
+	if !search.search_term.is_empty():
+		bindings.push_back("%" + search.search_term + "%")
+	
+	return {"bindings": bindings, "query": query, "join": join, "recursive": recursive}
 
-		# Query all assets.
-		query_results.append_array(_AssetsDatabase.query_with_bindings(query, bindings))
-
-	for query_result in query_results:
-		if query_result.has("name"):
-			query_result["name"] = query_result["name"].get_basename().get_file()
-			result.push_back(_fill_model(AMDirectory.new(), query_result))
-		else:
-			query_result["filename"] = query_result["filename"].get_basename().get_file()
-			result.push_back(_fill_model(AMAsset.new(), query_result))
+## Returns the total count of items (including dirs and assets), for a search
+func get_assets_count(search: AMSearch) -> int:
+	var count : int = 0
+	
+	var dquery := _build_directory_query(search)
+	var aquery := _build_asset_query(search)
+	
+	# We create a union of two different queries, where one counts the number of total dirs
+	# for the given search and one the total count of assets. The result is sumed up.
+	var qresult := _AssetsDatabase.query_with_bindings("""
+		%s
+		SELECT SUM(count) as total_count FROM (
+			SELECT COUNT(*) as count FROM directories as d %s WHERE %s
+			UNION
+			SELECT COUNT(*)  as count FROM assets as a %s WHERE %s
+		)
+	""" % [aquery.recursive, dquery.join, dquery.query, aquery.join, aquery.query], dquery.bindings + aquery.bindings)
+	if !qresult.is_empty():
+		count = qresult[0].total_count
+		
+	return count
+	
+## Returns a list which contains AMDirectory and AMAsset objects
+func query_assets(search: AMSearch, skip: int, count: int) -> Array:
+	var result : Array = []
+	
+	var dquery := _build_directory_query(search)
+	var aquery := _build_asset_query(search)
+	
+	var qresults := _AssetsDatabase.query_with_bindings("""
+		%s
+		SELECT id, name, NULL as last_modified, NULL as type, NULL as thumbnail, parent_id FROM directories as d %s WHERE %s
+		UNION
+		SELECT id, filename, last_modified, type, thumbnail, %s as parent_id FROM assets as a %s WHERE %s
+		LIMIT ?, ?
+	""" % [aquery.recursive, dquery.join, dquery.query, "NULL" if (search.directory_id == 0 && search.search_term.is_empty()) else "ad.ref_directory_id", aquery.join, aquery.query], dquery.bindings + aquery.bindings + [skip, count])
+	
+	for qresult in qresults:
+		if qresult.has("type") && qresult.type:
+			qresult["filename"] = qresult["name"].get_basename().get_file()
+			result.push_back(_fill_model(AMAsset.new(), qresult))
 			if result.back().thumbnail:
 				result.back().thumbnail = load_thumbnail(result.back())
+		else:
+			result.push_back(_fill_model(AMDirectory.new(), qresult))
 	
 	return result
-	
-func get_assets_count(directoryId : int, search : String) -> int:
-	var count : int = 0
-	var query : String = "SELECT COUNT(a.id) as count FROM assets as a"
-	var bindings : Array = []
-
-	# Search all files and directories inside of the given directory
-	if directoryId != 0:
-		var list : PackedStringArray = [str(directoryId)]
-		if !search.is_empty():
-			var qresult := _AssetsDatabase.query_with_bindings("SELECT id FROM directories WHERE parent_id = ?", [directoryId])
-			for result in qresult:
-				list.push_back(str(result["id"]))
-		
-		query += " LEFT JOIN asset_directory_rel as b ON(b.ref_directory_id IN (%s)) WHERE a.id = b.ref_assets_id AND a.filename LIKE ?" % ",".join(list)
-		bindings = ['%' + search + '%']
-	else:
-		# The root directory allows for a global search
-		if search.is_empty():
-			query += " LEFT JOIN asset_directory_rel as b ON(b.ref_assets_id = a.id) WHERE b.ref_directory_id IS NULL"
-		else:
-			query += " WHERE a.filename LIKE ?"
-			bindings.append('%' + search + '%')
-
-	var qresult := _AssetsDatabase.query_with_bindings(query, bindings)
-	if !qresult.is_empty():
-		count = qresult[0].count
-
-	qresult = _AssetsDatabase.query_with_bindings("SELECT COUNT(id) as count FROM directories WHERE parent_id = ? AND name LIKE ?", [null if directoryId == 0 else directoryId, '%' + search + '%'])
-	if !qresult.is_empty():
-		count += qresult[0].count
-
-	return count
 
 func get_assets_by_name(file : String) -> Array[AMAsset]:
 	var result : Array[AMAsset] = []

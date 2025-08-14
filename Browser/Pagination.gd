@@ -11,13 +11,25 @@ signal page_update(page)
 
 var _isUpdatingPageCount : bool = false
 
+func disable_navigation(disabled: bool) -> void:
+	if disabled:
+		_Left.disabled = true
+		_Right.disabled = true
+	else:
+		if current_page == total_pages:
+			_Right.disabled = true
+		else:
+			_Right.disabled = false
+			
+		if current_page <= 1:
+			_Left.disabled = true
+		else:
+			_Left.disabled = false
+
 func set_total_pages(value : int) -> void:
 	total_pages = value
 	if !_isUpdatingPageCount:
 		_update_page_count()
-	
-func set_total_pages_without_update(value : int) -> void:
-	total_pages = value
 	
 func set_current_page(value : int) -> void:
 	current_page = value

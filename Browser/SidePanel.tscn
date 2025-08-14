@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3 uid="uid://kge5t0cmst51"]
+
+[ext_resource type="Script" uid="uid://cnnvdcrbxr3he" path="res://Browser/SidePanel.gd" id="1_8jnph"]
+[ext_resource type="Texture2D" uid="uid://f5x3uovurnt" path="res://Assets/Material Icons/keyboard_arrow_right.svg" id="1_80wou"]
+
+[node name="SidePanel" type="Panel"]
+clip_contents = true
+offset_right = 300.0
+offset_bottom = 648.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.3
+script = ExtResource("1_8jnph")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Close" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+icon = ExtResource("1_80wou")
+icon_alignment = 1
+expand_icon = true
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/Close" to="." method="_on_close_pressed"]

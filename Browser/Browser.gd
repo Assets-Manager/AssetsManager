@@ -1,23 +1,28 @@
-extends VBoxContainer
+extends HBoxContainer
 
 const ASSET_CARD = preload("res://Browser/AssetCard.tscn")
 const ITEMS_PER_PAGE : int = 100
 
-@onready var _Cards := $ScrollContainer/CenterContainer/Cards
+@onready var _Cards := $Browser/ScrollContainer/CenterContainer/Cards
 @onready var _ImporterDialog := $CanvasLayer/ImporterDialog
 @onready var _DirectoryMoveDialog := $CanvasLayer/DirectoryMoveDialog
-@onready var _Pagination := $MarginContainer2/HBoxContainer/Pagination
-@onready var _Search := $MarginContainer/HBoxContainer/Search
+@onready var _Pagination := $Browser/MarginContainer2/HBoxContainer/Pagination
+@onready var _Search := $Browser/MarginContainer/HBoxContainer/Search
 @onready var _InputBox := $CanvasLayer/InputBox
-@onready var _ScrollContainer := $ScrollContainer
-@onready var _BackButton := $MarginContainer/HBoxContainer/Back
-@onready var _HomeButton := $MarginContainer/HBoxContainer/Home
+@onready var _ScrollContainer := $Browser/ScrollContainer
+@onready var _BackButton := $Browser/MarginContainer/HBoxContainer/Back
+@onready var _HomeButton := $Browser/MarginContainer/HBoxContainer/Home
 @onready var _DeleteDirDialog := $CanvasLayer/DeleteDirDialog
 @onready var _NativeDialog : FileDialog = $NativeDialog
 @onready var _InfoDialog := $CanvasLayer/InfoDialog
 @onready var _GodotTour := $CanvasLayer/GodotTour
 @onready var _OverwriteDialog := $CanvasLayer/OverwriteDialog
 @onready var _AssetLinksDialog := $CanvasLayer/AssetLinksDialog
+@onready var _SidePanel := $SidePanel
+
+@onready var _AdvancedFilter := $Browser/MarginContainer/HBoxContainer/AdvancedFilter
+@onready var _CloseLib := $Browser/MarginContainer2/HBoxContainer/CloseLib
+@onready var _CreateDir := $Browser/MarginContainer/HBoxContainer/CreateDir
 
 var _DirectoriesToDelete : Array[AMDirectory] = []
 var _VisibleCards : int = 0
@@ -35,10 +40,41 @@ func _ready() -> void:
 	AssetsLibrary.connect("new_asset_added", Callable(self, "_new_asset_added").bind(), CONNECT_DEFERRED)
 	AssetsLibrary.connect("increase_import_counter", Callable(self, "_increase_import_counter").bind(), CONNECT_DEFERRED)
 	
+	BrowserManager.search_changed.connect(_search_changed)
+	BrowserManager.need_ui_refresh.connect(_on_refresh_ui)
+	BrowserManager.show_file_info_signal.connect(_show_file_info)
+	
+	BrowserManager.enter_tagging_mode.connect(_enter_tagging_mode)
+	BrowserManager.leave_tagging_mode.connect(_leave_tagging_mode)
+	
+	BrowserManager.reset_search()
+	
 	# Updates the initial pagination
-	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
+	_search_changed()
 	
 	call_deferred("_start_tour")
+	
+func _enter_tagging_mode() -> void:
+	_Pagination.disable_navigation(true)
+	_BackButton.disabled = true
+	_HomeButton.disabled = true
+	_AdvancedFilter.disabled = true
+	_Search.editable = false
+	_CloseLib.disabled = true
+	_CreateDir.disabled = true
+	
+func _leave_tagging_mode() -> void:
+	_Pagination.disable_navigation(false)
+	_AdvancedFilter.disabled = false
+	_Search.editable = true
+	_CloseLib.disabled = false
+	_CreateDir.disabled = false
+	
+	_BackButton.disabled = AssetsLibrary.current_directory == 0
+	_HomeButton.disabled = _BackButton.disabled
+	
+func _search_changed() -> void:
+	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(BrowserManager.search) / float(ITEMS_PER_PAGE))
 	
 func _start_tour() -> void:
 	# Does the user already did the tutorial?
@@ -52,7 +88,7 @@ func _start_tour() -> void:
 # 			   UI import update
 # ---------------------------------------------
 
-func _process(delta):
+func _process(_delta):
 	# Is a render thread running?
 	# If so than wait for it to finish.
 	if _ThumbnailThread && !_ThumbnailThread.is_alive():
@@ -74,12 +110,18 @@ func _process(delta):
 					_OverwriteDialog.popup_centered()
 					_Thumbnail = null
 
-# Renders the thumnail. Since some importers only work on the main thread,
+# Renders the thumbnail. Since some importers only work on the main thread,
 # this one must be called outside of the main thread, to avoid locking.
 func _render_thumbnail(file) -> Texture2D:
 	return file.importer.render_thumbnail(file.file)
 
 func _exit_tree() -> void:
+	BrowserManager.search_changed.disconnect(_search_changed)
+	BrowserManager.need_ui_refresh.disconnect(_on_refresh_ui)
+	BrowserManager.show_file_info_signal.disconnect(_show_file_info)
+	BrowserManager.enter_tagging_mode.disconnect(_enter_tagging_mode)
+	BrowserManager.leave_tagging_mode.disconnect(_leave_tagging_mode)
+	
 	# Wait for the renderthread to finish, before the programm is closed.
 	if _ThumbnailThread:
 		_ThumbnailThread.wait_to_finish()
@@ -127,7 +169,7 @@ func _new_asset_added(asset: AMAsset) -> void:
 		tmp.visible = true
 		_VisibleCards += 1
 	else:
-		_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, "") / float(ITEMS_PER_PAGE))
+		_search_changed()
 	
 	_increase_import_counter()
 
@@ -152,7 +194,7 @@ func _on_Pagination_page_update(page : int) -> void:
 		_ScrollContainer.scroll_vertical = 0
 		_ScrollContainer.scroll_horizontal = 0
 		
-		var cards := AssetsLibrary.query_assets(AssetsLibrary.current_directory, _Search.text, (page - 1) * ITEMS_PER_PAGE, ITEMS_PER_PAGE)
+		var cards := AssetsLibrary.query_assets(BrowserManager.search, (page - 1) * ITEMS_PER_PAGE, ITEMS_PER_PAGE)
 		
 		# Hide all card, which are currently visible, since we reuse them later.
 		for child in _Cards.get_children():
@@ -191,18 +233,26 @@ func _show_links(id: int) -> void:
 	_AssetLinksDialog.set_asset_id(id)
 	_AssetLinksDialog.popup_centered()
 	
-func _card_pressed(id: int, is_dir : bool) -> void:
+func _card_pressed(data, is_dir : bool) -> void:
 	# Opens the pressed directory.
 	if is_dir:
-		BulkHelper.deselect_all()
+		BrowserManager.deselect_all()
 		
-		AssetsLibrary.current_directory = id
-		_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, _Search.text) / float(ITEMS_PER_PAGE)))
-		_Pagination.current_page = 1
+		AssetsLibrary.current_directory = data.id if data is AMDirectory else data
+		BrowserManager.update_search({"directory_id": data.id if data is AMDirectory else data})
+
 		_BackButton.mouse_default_cursor_shape = Control.CURSOR_ARROW if (AssetsLibrary.current_directory == 0) else Control.CURSOR_POINTING_HAND
 		_HomeButton.mouse_default_cursor_shape = _BackButton.mouse_default_cursor_shape
 		_BackButton.disabled = AssetsLibrary.current_directory == 0
 		_HomeButton.disabled = _BackButton.disabled
+	else:
+		_show_file_info(data)
+
+func _show_file_info(asset) -> void:
+	if _SidePanel.is_open():
+		_SidePanel.create_instance("FILEINFO").asset = asset
+	else:
+		_SidePanel.show_view("FILEINFO").asset = asset
 
 # Exports an asset
 func _export_assets(datasets: Array) -> void:
@@ -229,7 +279,10 @@ func _delete_card(dirs: Array[AMDirectory]) -> void:
 	_DeleteDirDialog.popup_centered()
 
 func _on_refresh_ui():
-	_card_pressed(AssetsLibrary.current_directory, true)
+	var dir := AMDirectory.new()
+	dir.id = AssetsLibrary.current_directory
+	
+	_card_pressed(dir, true)
 
 # ---------------------------------------------
 # 	   Different ui actions and functions
@@ -240,7 +293,6 @@ func _create_card() -> AssetCard:
 	var card : AssetCard = ASSET_CARD.instantiate()
 	card.connect("pressed", Callable(self, "_card_pressed"))
 	card.connect("delete_card", Callable(self, "_delete_card"))
-	card.connect("refresh_ui", Callable(self, "_on_refresh_ui"))
 	card.connect("export_assets", Callable(self, "_export_assets"))
 	card.connect("open_containing_folder", Callable(self, "_card_pressed").bind(true))
 	card.connect("move_to_directory_pressed", Callable(self, "_move_to_directory_pressed"))
@@ -252,12 +304,12 @@ func _on_CreateDir_pressed() -> void:
 	_InputBox.popup_centered()
 
 # Creates a new directory.
-func _on_InputBox_name_entered(name : String) -> void:
+func _on_InputBox_name_entered(p_name : String) -> void:
 	if name.is_empty():
 		return
 		
-	if AssetsLibrary.get_directory_id(AssetsLibrary.current_directory, name) == 0:
-		var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, name)
+	if AssetsLibrary.get_directory_id(AssetsLibrary.current_directory, p_name) == 0:
+		var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, p_name)
 		if dir != 0:
 			var tmp: AssetCard
 			
@@ -273,7 +325,7 @@ func _on_InputBox_name_entered(name : String) -> void:
 			
 			var card := AMDirectory.new()
 			card.id = dir
-			card.name = name
+			card.name = p_name
 			tmp.dataset = card
 			tmp.set_parent_folder(AssetsLibrary.current_directory)
 			tmp.visible = true
@@ -286,7 +338,10 @@ func _on_InputBox_name_entered(name : String) -> void:
 
 # Leave a subdirectory.
 func _on_Back_pressed() -> void:
-	_card_pressed(AssetsLibrary.get_parent_dir_id(AssetsLibrary.current_directory), true)
+	var dir := AMDirectory.new()
+	dir.id = AssetsLibrary.get_parent_dir_id(AssetsLibrary.current_directory)
+	
+	_card_pressed(dir, true)
 
 # Deletes a directory.
 func _on_DeleteDirDialog_confirmed() -> void:
@@ -309,9 +364,8 @@ func _on_DeleteDirDialog_confirmed() -> void:
 		_card_pressed(AssetsLibrary.current_directory, true)
 
 # Updates the content of the page, if the user starts typing in the search bar.
-func _on_Search_text_changed(_new_text: String) -> void:
-	_Pagination.set_total_pages_without_update(ceil(AssetsLibrary.get_assets_count(AssetsLibrary.current_directory, _Search.text) / float(ITEMS_PER_PAGE)))
-	_Pagination.current_page = 1
+func _on_Search_text_changed(new_text: String) -> void:
+	BrowserManager.update_search({"search_term": new_text})
 
 func _on_Home_pressed() -> void:
 	_card_pressed(0, true)
@@ -332,3 +386,26 @@ func _on_AssetLinksDialog_popup_hide():
 
 func _on_OverwriteDialog_popup_hide():
 	_card_pressed(AssetsLibrary.current_directory, true)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if (event is InputEventMouseButton) && (event.button_index == MOUSE_BUTTON_LEFT) && event.pressed:
+		var deselectAll = true
+		
+		# Checks if any card if hit by the mouse click
+		for card in _Cards.get_children():
+			if card is AssetCard:
+				if card.visible:
+					if Rect2(card.global_position, card.size).has_point(event.global_position):
+						deselectAll = false
+						break
+		if deselectAll:
+			BrowserManager.deselect_all()
+
+func _on_tag_manager_pressed() -> void:
+	_SidePanel.show_view("TAG_MANAGER")
+
+func _on_side_panel_closed() -> void:
+	BrowserManager.tagging_mode = false
+
+func _on_advanced_filter_pressed() -> void:
+	_SidePanel.show_view("ADVANCED_SEARCH")

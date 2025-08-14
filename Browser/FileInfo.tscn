@@ -1,0 +1,57 @@
+[gd_scene load_steps=4 format=3 uid="uid://c8ufdlbswmgqb"]
+
+[ext_resource type="PackedScene" uid="uid://bg1ndjavb6us7" path="res://Browser/TagManager.tscn" id="1_5c48w"]
+[ext_resource type="Script" uid="uid://ctmd6tg4m65nc" path="res://Browser/FileInfo.gd" id="1_tcr7o"]
+[ext_resource type="Texture2D" uid="uid://bcoxi7g7564rk" path="res://Assets/Material Icons/save.svg" id="2_tcr7o"]
+
+[node name="FileInfo" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+script = ExtResource("1_tcr7o")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "Name"
+
+[node name="Name" type="LineEdit" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "Tags"
+
+[node name="TagManager" parent="ScrollContainer/VBoxContainer" instance=ExtResource("1_5c48w")]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+toggle_mode = true
+
+[node name="Save" type="Button" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/icon_max_width = 24
+disabled = true
+text = "Save"
+icon = ExtResource("2_tcr7o")
+
+[connection signal="text_changed" from="ScrollContainer/VBoxContainer/Name" to="." method="_on_name_text_changed"]
+[connection signal="changed" from="ScrollContainer/VBoxContainer/TagManager" to="." method="_on_tag_manager_changed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/Save" to="." method="_on_save_pressed"]

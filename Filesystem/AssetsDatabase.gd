@@ -29,15 +29,16 @@ func query_with_bindings(query: String, bindings: Array) -> Array[Dictionary]:
 	var result : Array[Dictionary] = []
 	if _DB:
 		_Lock.lock()
+		print(query)
 		if _DB.query_with_bindings(query, bindings):
 			result = _DB.query_result
 		_Lock.unlock()
 		
 	return result
 
-# Inserts a new row into a given table. The data need to be key(Column) value.
-# This function is thread safe.
-# Returns true on success.
+## Inserts a new row into a given table. The data need to be key(Column) value.
+## This function is thread safe.
+## Returns true on success.
 func insert(table: String, data: Dictionary) -> bool:
 	var result : bool = false
 	if _DB:
@@ -46,9 +47,20 @@ func insert(table: String, data: Dictionary) -> bool:
 		_Lock.unlock()
 	return result
 
-# Updates all data which meets the condition.
-# This function is thread safe.
-# Returns true on success.
+## Inserts a new rows into a given table. The data need to be key(Column) value.
+## This function is thread safe.
+## Returns true on success.
+func insert_rows(table: String, rows: Array[Dictionary]) -> bool:
+	var result : bool = false
+	if _DB:
+		_Lock.lock()
+		result = _DB.insert_rows(table, rows)
+		_Lock.unlock()
+	return result
+
+## Updates all data which meets the condition.
+## This function is thread safe.
+## Returns true on success.
 func update(table: String, condition: String, data: Dictionary) -> bool:
 	var result : bool = false
 	if _DB:
@@ -74,6 +86,14 @@ func get_last_insert_rowid() -> int:
 # ---------------------------------------------
 # 				  Migration
 # ---------------------------------------------
+
+func _get_columns(table: String) -> Dictionary[String, String]:
+	var result : Dictionary[String, String] = {}
+	
+	if _DB.query_with_bindings("pragma table_info(%s)", [table]):
+		for qresult in _DB.query_result:
+			result[qresult["name"]] = qresult["type"]
+	return result
 
 func _migrate() -> bool:
 	var ret = false
@@ -132,12 +152,44 @@ func _migrate() -> bool:
 			)
 		else:
 			ret = true
-	
+
 		if tables.find("asset_directory_rel") == -1:
 			ret = _DB.query(
-				"CREATE TABLE 'asset_directory_rel' ('ref_assets_id'	INTEGER,'ref_directory_id'	INTEGER,PRIMARY KEY('ref_assets_id','ref_directory_id'), FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE);"
+				"CREATE TABLE 'asset_directory_rel' ('ref_assets_id' INTEGER,'ref_directory_id'	INTEGER,PRIMARY KEY('ref_assets_id','ref_directory_id'), FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE);"
 			)
 		else:
 			ret = true
-	
+
+		if tables.find("tags") == -1:
+			ret = _DB.create_table("tags", {
+				"id": {
+					"data_type": "int",
+					"primary_key": true,
+					"auto_increment": true
+				},
+				"name": {
+					"data_type": "text",
+					"not_null": true
+				},
+				"description": {
+					"data_type": "text"
+				}
+			})
+		else:
+			ret = true
+
+		if tables.find("tag_directory_rel") == -1:
+			ret = _DB.query(
+				"CREATE TABLE 'tag_directory_rel' ('ref_tag_id' INTEGER, 'ref_directory_id' INTEGER, PRIMARY KEY('ref_tag_id', 'ref_directory_id'), FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, FOREIGN KEY('ref_tag_id') REFERENCES 'tags'('id') ON DELETE CASCADE);"
+			)
+		else:
+			ret = true
+
+		if tables.find("tag_asset_rel") == -1:
+			ret = _DB.query(
+				"CREATE TABLE 'tag_asset_rel' ('ref_assets_id' INTEGER, 'ref_tag_id' INTEGER, PRIMARY KEY('ref_assets_id', 'ref_tag_id'), FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE, FOREIGN KEY('ref_tag_id') REFERENCES 'tags'('id') ON DELETE CASCADE);"
+			)
+		else:
+			ret = true
+
 	return ret

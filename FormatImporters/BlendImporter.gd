@@ -19,7 +19,7 @@ func _header_pointer_size(header : String) -> int:
 # Extracts the thumbnail from the .blend file
 func _extract_thumbnail(file : FileAccess, head_size : int) -> Texture2D:
 	var result : ImageTexture = null
-	var img : Image = Image.new()
+	var img : Image = null
 	
 	while !file.eof_reached():
 		var chunk_header : String = file.get_buffer(4).get_string_from_utf8()
@@ -40,7 +40,7 @@ func _extract_thumbnail(file : FileAccess, head_size : int) -> Texture2D:
 					return null
 				
 				var pixeldata : PackedByteArray = file.get_buffer(data_size)
-				img.create_from_data(width, height, false, Image.FORMAT_RGBA8, pixeldata)
+				img = Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, pixeldata)
 				img.flip_y()
 				
 				result = ImageTexture.create_from_image(img) #,0

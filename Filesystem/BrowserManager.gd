@@ -1,0 +1,79 @@
+extends Node
+
+signal enter_tagging_mode()
+signal leave_tagging_mode()
+
+signal card_selection_changed()
+signal search_changed()
+
+signal need_ui_refresh()
+signal show_file_info_signal(asset)
+
+var search : AMSearch
+var tagging_mode: bool = false : set = _set_tagging_mode
+
+func _set_tagging_mode(value: bool) -> void:
+	if value == tagging_mode:
+		return
+	
+	tagging_mode = value
+	if tagging_mode:
+		emit_signal("enter_tagging_mode")
+	else:
+		emit_signal("leave_tagging_mode")
+
+## Updates the search object.
+func update_search(dict : Dictionary) -> void:
+	for prop in search.get_property_list():
+		if ((prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE) == PROPERTY_USAGE_SCRIPT_VARIABLE) && dict.has(prop["name"]):
+			search.set(prop["name"], dict[prop["name"]])
+			
+	emit_signal("search_changed")
+
+func refresh_ui() -> void:
+	emit_signal("need_ui_refresh")
+
+func show_file_info(asset) -> void:
+	emit_signal("show_file_info_signal", asset)
+
+func emit_card_selection_changed() -> void:
+	emit_signal("card_selection_changed")
+
+func reset_search() -> void:
+	AssetsLibrary.current_directory = 0
+	search = AMSearch.new()
+	search.directory_id = AssetsLibrary.current_directory
+
+## Gets a list of all selected datasets
+func get_selected_datasets(default) -> Array:
+	var datasets : Array = []
+	var nodes := get_tree().get_nodes_in_group("selected_assets_cards")
+	if !nodes.is_empty():
+		for node in nodes:
+			datasets.push_back(node.dataset)
+	elif default:
+		datasets.push_back(default)
+		
+	return datasets
+
+## Gets all selected directories.
+func get_selected_directories(dir) -> Array:
+	var datasets : Array = []
+	var nodes := get_tree().get_nodes_in_group("selected_assets_cards")
+	if !nodes.is_empty():
+		for node in nodes:
+			if node.dataset is AMDirectory:
+				datasets.push_back(node.dataset)
+	else:
+		if dir is AMDirectory:
+			datasets.push_back(dir)
+		
+	return datasets
+	
+## Deselects all selected nodes
+func deselect_all() -> void:
+	var nodes := get_tree().get_nodes_in_group("selected_assets_cards")
+	if !nodes.is_empty():
+		get_tree().call_group("selected_assets_cards", "_change_selection_state", false)
+		for node in nodes:
+			node.remove_from_group("selected_assets_cards")

@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://7vslpl2u2cmn"]
+
+[ext_resource type="Script" uid="uid://b8wliuhsvxfkd" path="res://Browser/AdvancedSearch.gd" id="1_mtc63"]
+
+[node name="AdvancedSearch" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+script = ExtResource("1_mtc63")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="ItemList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 2
+
+[node name="Clear" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Clear"
+
+[connection signal="multi_selected" from="VBoxContainer/ItemList" to="." method="_on_item_list_multi_selected"]
+[connection signal="pressed" from="VBoxContainer/Clear" to="." method="_on_clear_pressed"]

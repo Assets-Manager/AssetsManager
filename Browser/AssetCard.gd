@@ -3,7 +3,7 @@ class_name AssetCard extends MarginContainer
 const FOLDER_ICON = preload("res://Assets/Material Icons/folder.svg")
 const HIGHLIGHT_STYLEBOX = preload("res://Assets/Styleboxes/Button/button_highlight.stylebox")
 
-signal pressed(id: int, is_dir: bool)
+signal pressed(data, is_dir: bool)
 
 ## Called if one or more cards should be delete
 ## [br]
@@ -17,7 +17,6 @@ signal export_assets(datasets: Array)
 ## [br]
 ## - [param datasets], array of datasets for bulk movement
 signal move_to_directory_pressed(datasets: Array)
-signal refresh_ui()
 signal open_containing_folder(parent_folder: int)
 signal show_links(id: int)
 
@@ -25,11 +24,14 @@ signal show_links(id: int)
 @onready var _Texture := $Card/MarginContainer/VBoxContainer/TextureRect
 @onready var _Title := $Card/MarginContainer/VBoxContainer/Title
 @onready var _Animation := $AnimationPlayer
+@onready var _Move := $Card/HBoxContainer/Move
 @onready var _Delete := $Card/HBoxContainer/Delete
 @onready var _OpenFolder := $Card/HBoxContainer/OpenFolder
 @onready var _ShowLinks := $Card/HBoxContainer2/ShowLinks
 @onready var _RemoveLink := $Card/HBoxContainer2/RemoveLink
+@onready var _Export := $Card/HBoxContainer/Export
 @onready var _EditField := $Card/EditField
+@onready var _Info := $Card/HBoxContainer/Info
 
 static var _CurrentVisibleEditField : LineEdit = null
 
@@ -39,6 +41,22 @@ var _ParentFolder : int = 0
 
 func _ready() -> void:
 	_OpenFolder.hide()
+	BrowserManager.enter_tagging_mode.connect(_enter_tagging_mode)
+	BrowserManager.leave_tagging_mode.connect(_leave_tagging_mode)
+	
+func _enter_tagging_mode() -> void:
+	_RemoveLink.visible = false
+	_ShowLinks.visible = false
+	_Delete.visible = false
+	_Export.visible = false
+	_Move.visible = false
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	
+func _leave_tagging_mode() -> void:
+	_Export.visible = true
+	_Move.visible = true
+	BrowserManager.deselect_all()
+	_update_controls()
 	
 func set_parent_folder(parent_folder : int) -> void:
 	_ParentFolder = parent_folder
@@ -52,9 +70,11 @@ func _set_dataset(p_dataset) -> void:
 	_update_controls()
 	if dataset is AMDirectory:
 		_Texture.texture = FOLDER_ICON
+		_Info.visible = true
 		_set_title(dataset.name)
 	elif dataset is AMAsset:
 		_Texture.texture = dataset.thumbnail
+		_Info.visible = false
 		_set_title(dataset.filename)
 
 func _update_controls() -> void:
@@ -69,12 +89,12 @@ func _set_title(title : String) -> void:
 	tooltip_text = title
 
 func _on_Card_mouse_entered() -> void:
-	if is_dir && (scale == Vector2.ONE):
+	if is_dir && (scale == Vector2.ONE) && !BrowserManager.tagging_mode:
 		_Animation.play("Hover")
 
 func _on_Card_mouse_exited() -> void:
 	if !Rect2(Vector2(), size).has_point(get_local_mouse_position()):
-		if is_dir:
+		if is_dir && !BrowserManager.tagging_mode:
 			_Animation.play_backwards("Hover")
 		else:
 			_Animation.play("RESET")
@@ -92,15 +112,21 @@ func _change_selection_state(selected: bool) -> void:
 func _on_Card_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if (event.button_index == MOUSE_BUTTON_LEFT) && !event.pressed:
-			if event.ctrl_pressed:
-				add_to_group("selected_assets_cards")
-				_change_selection_state(true)
+			if event.ctrl_pressed || BrowserManager.tagging_mode:
+				if BrowserManager.tagging_mode && is_in_group("selected_assets_cards"):
+					remove_from_group("selected_assets_cards")
+					_change_selection_state(false)
+				else:
+					add_to_group("selected_assets_cards")
+					_change_selection_state(true)
+					
+				BrowserManager.emit_card_selection_changed()
 			else:
-				BulkHelper.deselect_all()
-				emit_signal("pressed", dataset.id, is_dir)
+				BrowserManager.deselect_all()
+				emit_signal("pressed", dataset, is_dir)
 
 func _on_Delete_pressed() -> void:
-	var datasets : Array[AMDirectory] = BulkHelper.get_selected_directories(dataset)
+	var datasets : Array[AMDirectory] = BrowserManager.get_selected_directories(dataset)
 	if !datasets.is_empty():
 		emit_signal("delete_card", datasets)
 
@@ -112,7 +138,7 @@ func _drop_data(_position: Vector2, data) -> void:
 		AssetsLibrary.bulk_move(data, dataset.id)
 	else:
 		AssetsLibrary.move(data, dataset.id)
-	emit_signal("refresh_ui")
+	BrowserManager.refresh_ui()
 
 func _get_drag_data(_position: Vector2):
 	var nodes := get_tree().get_nodes_in_group("selected_assets_cards")
@@ -140,7 +166,7 @@ func _get_drag_data(_position: Vector2):
 	return self.dataset
 
 func _on_Export_pressed() -> void:
-	var datasets : Array = BulkHelper.get_selected_datasets(dataset)
+	var datasets : Array = BrowserManager.get_selected_datasets(dataset)
 	if !datasets.is_empty():
 		emit_signal("export_assets", datasets)
 
@@ -148,18 +174,18 @@ func _on_OpenFolder_pressed() -> void:
 	emit_signal("open_containing_folder", _ParentFolder)
 
 func _on_Move_pressed() -> void:
-	emit_signal("move_to_directory_pressed", BulkHelper.get_selected_datasets(dataset))
+	emit_signal("move_to_directory_pressed", BrowserManager.get_selected_datasets(dataset))
 
 func _on_RemoveLink_pressed():
-	AssetsLibrary.bulk_unlink_assets(BulkHelper.get_selected_datasets(dataset), AssetsLibrary.current_directory)
-	emit_signal("refresh_ui")
+	AssetsLibrary.bulk_unlink_assets(BrowserManager.get_selected_datasets(dataset), AssetsLibrary.current_directory)
+	BrowserManager.refresh_ui()
 
 func _on_ShowLinks_pressed():
 	emit_signal("show_links", dataset.id)
 
 func _on_title_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if (event.button_index == MOUSE_BUTTON_LEFT) && event.pressed:
+		if (event.button_index == MOUSE_BUTTON_LEFT) && event.pressed && !BrowserManager.tagging_mode:
 			_EditField.position = make_canvas_position_local(_Title.global_position) - Vector2(8, 8)
 			_EditField.size = _Title.size
 			_EditField.text = _Title.text
@@ -169,6 +195,8 @@ func _on_title_gui_input(event: InputEvent) -> void:
 				_CurrentVisibleEditField.hide()
 			
 			_EditField.show()
+			_EditField.grab_focus()
+			_EditField.caret_column = _EditField.text.length()
 			_CurrentVisibleEditField = _EditField
 
 func _on_edit_field_text_submitted(new_text: String) -> void:
@@ -181,3 +209,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action("ui_cancel") || ((event is InputEventMouseButton) && (event.button_index == MOUSE_BUTTON_LEFT) && event.pressed):
 		_EditField.hide()
 		_CurrentVisibleEditField = null
+
+func _on_edit_field_text_changed(new_text: String) -> void:
+	new_text.is_valid_filename()
+
+func _on_edit_field_gui_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		# No illegal file names
+		if event.unicode != 0 && event.unicode != 32 && !String.chr(event.unicode).is_valid_filename():
+			accept_event()
+
+func _on_info_pressed() -> void:
+	BrowserManager.show_file_info(dataset)

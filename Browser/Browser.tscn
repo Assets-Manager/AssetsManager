@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://c5wq0ri5bodkn"]
+[gd_scene load_steps=33 format=3 uid="uid://c5wq0ri5bodkn"]
 
 [ext_resource type="PackedScene" uid="uid://o8fiejmiwke3" path="res://Browser/Dialogs/ImporterDialog.tscn" id="1"]
 [ext_resource type="Script" uid="uid://7m4prb8mx2w5" path="res://Browser/CenterContainer.gd" id="2"]
@@ -6,14 +6,20 @@
 [ext_resource type="PackedScene" uid="uid://b8pl3e1q7kuwc" path="res://Browser/Pagination.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://btma7j87lcj3t" path="res://Browser/Dialogs/InputBox.tscn" id="5"]
 [ext_resource type="Texture2D" uid="uid://vdgtb0wmrqk2" path="res://Assets/Material Icons/arrow_upward.svg" id="6"]
+[ext_resource type="Texture2D" uid="uid://bl84f7s3xu4iv" path="res://Assets/Material Icons/filter_list.svg" id="6_87q7y"]
+[ext_resource type="Texture2D" uid="uid://bpatsod1gqple" path="res://Assets/Material Icons/label.svg" id="6_chx42"]
 [ext_resource type="Script" uid="uid://vvlqtk6vu0dh" path="res://Browser/Dialogs/ConfirmationDialog.gd" id="7"]
 [ext_resource type="Texture2D" uid="uid://by0b1i7sqxgph" path="res://Assets/Material Icons/home.svg" id="9"]
 [ext_resource type="PackedScene" uid="uid://disku4y5k60f5" path="res://Browser/Dialogs/DirectoryMoveDialog.tscn" id="10"]
 [ext_resource type="Texture2D" uid="uid://cbk6ihl3h1bi0" path="res://Assets/Material Icons/folder_open.svg" id="11"]
+[ext_resource type="PackedScene" uid="uid://kge5t0cmst51" path="res://Browser/SidePanel.tscn" id="11_cr5nk"]
 [ext_resource type="Script" uid="uid://6yo1b3auudwa" path="res://Startscreen/AcceptDialog.gd" id="12"]
+[ext_resource type="PackedScene" uid="uid://bg1ndjavb6us7" path="res://Browser/TagManager.tscn" id="12_cr5nk"]
 [ext_resource type="Texture2D" uid="uid://curlb4js18w0y" path="res://Assets/Material Icons/search.svg" id="13"]
+[ext_resource type="PackedScene" uid="uid://7vslpl2u2cmn" path="res://Browser/AdvancedSearch.tscn" id="13_31vlt"]
 [ext_resource type="Texture2D" uid="uid://jup2qpyy7aog" path="res://Assets/Material Icons/logout.svg" id="14"]
 [ext_resource type="Texture2D" uid="uid://b6l4e3r3uyext" path="res://Assets/Material Icons/create_new_folder.svg" id="15"]
+[ext_resource type="PackedScene" uid="uid://c8ufdlbswmgqb" path="res://Browser/FileInfo.tscn" id="15_rw61a"]
 [ext_resource type="Script" uid="uid://bvesl2jtdvn0w" path="res://addons/godottour/GodotTour.gd" id="16"]
 [ext_resource type="Script" uid="uid://b87d1fb76imw" path="res://addons/godottour/TourStep.gd" id="17"]
 [ext_resource type="PackedScene" uid="uid://butw3mql7nhbd" path="res://Browser/Dialogs/OverwriteDialog.tscn" id="18"]
@@ -21,37 +27,37 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer/HBoxContainer/Back")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/Back")
 text = "Goes one directory up."
 
 [sub_resource type="Resource" id="2"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer/HBoxContainer/Home")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/Home")
 text = "Goes to the root directory of your asset directory."
 
 [sub_resource type="Resource" id="3"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer/HBoxContainer/CreateDir")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/CreateDir")
 text = "Creates a new directory. (Directories are only virtual and are not created on your hard drive)"
 
 [sub_resource type="Resource" id="4"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer/HBoxContainer/Search")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/Search")
 text = "Allows you to search for assets and directories. If you are in the root directory, the entire library will be searched."
 
 [sub_resource type="Resource" id="5"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer/HBoxContainer/OpenLibrary")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/OpenLibrary")
 text = "Opens the library directory with the OS file manager."
 
 [sub_resource type="Resource" id="6"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer2/HBoxContainer/CloseLib")
+control = NodePath("../../Browser/MarginContainer2/HBoxContainer/CloseLib")
 text = "Closes the library and goes back to the main screen."
 
 [sub_resource type="Resource" id="7"]
 script = ExtResource("17")
-control = NodePath("../../MarginContainer2/HBoxContainer/Pagination")
+control = NodePath("../../Browser/MarginContainer2/HBoxContainer/Pagination")
 text = "Allows you to navigate through pages of assets."
 
 [sub_resource type="Resource" id="8"]
@@ -59,23 +65,29 @@ script = ExtResource("17")
 control = NodePath("")
 text = "Last but not least, files or directories can be imported either by dragging them into\\nthis window or manually moving them into the library directory.\\nIMPORTANT: Your files will be moved to the library directory!"
 
-[node name="Browser" type="VBoxContainer"]
+[node name="Browser" type="HBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("3")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="Browser" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="Browser"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Browser/MarginContainer"]
 layout_mode = 2
 
-[node name="Back" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="Back" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Go to parent"
@@ -84,7 +96,7 @@ icon = ExtResource("6")
 icon_alignment = 1
 expand_icon = true
 
-[node name="Home" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="Home" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Go root directory"
@@ -93,12 +105,12 @@ icon = ExtResource("9")
 icon_alignment = 1
 expand_icon = true
 
-[node name="Control" type="Control" parent="MarginContainer/HBoxContainer"]
+[node name="Control" type="Control" parent="Browser/MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.8
 
-[node name="CreateDir" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="CreateDir" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Create new directory"
@@ -107,18 +119,34 @@ icon = ExtResource("15")
 icon_alignment = 1
 expand_icon = true
 
-[node name="Search" type="LineEdit" parent="MarginContainer/HBoxContainer"]
+[node name="Search" type="LineEdit" parent="Browser/MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search"
 right_icon = ExtResource("13")
 caret_blink = true
 
-[node name="Control2" type="Control" parent="MarginContainer/HBoxContainer"]
+[node name="AdvancedFilter" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+icon = ExtResource("6_87q7y")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Control2" type="Control" parent="Browser/MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="OpenLibrary" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="TagManager" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+tooltip_text = "Open tag manager"
+mouse_default_cursor_shape = 2
+icon = ExtResource("6_chx42")
+icon_alignment = 1
+expand_icon = true
+
+[node name="OpenLibrary" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(33, 33)
 layout_mode = 2
 tooltip_text = "Open in file manager"
@@ -127,17 +155,17 @@ icon = ExtResource("11")
 icon_alignment = 1
 expand_icon = true
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="ScrollContainer" type="ScrollContainer" parent="Browser"]
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2")
 
-[node name="CenterContainer" type="CenterContainer" parent="ScrollContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="Browser/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Cards" type="HFlowContainer" parent="ScrollContainer/CenterContainer"]
+[node name="Cards" type="HFlowContainer" parent="Browser/ScrollContainer/CenterContainer"]
 custom_minimum_size = Vector2(960, 540)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -146,17 +174,17 @@ theme_override_constants/h_separation = 0
 theme_override_constants/v_separation = 0
 alignment = 1
 
-[node name="MarginContainer2" type="MarginContainer" parent="."]
+[node name="MarginContainer2" type="MarginContainer" parent="Browser"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Browser/MarginContainer2"]
 layout_mode = 2
 
-[node name="CloseLib" type="Button" parent="MarginContainer2/HBoxContainer"]
+[node name="CloseLib" type="Button" parent="Browser/MarginContainer2/HBoxContainer"]
 custom_minimum_size = Vector2(33, 33)
 layout_mode = 2
 tooltip_text = "Close library"
@@ -165,8 +193,16 @@ icon = ExtResource("14")
 icon_alignment = 1
 expand_icon = true
 
-[node name="Pagination" parent="MarginContainer2/HBoxContainer" instance=ExtResource("4")]
+[node name="Pagination" parent="Browser/MarginContainer2/HBoxContainer" instance=ExtResource("4")]
 layout_mode = 2
+
+[node name="SidePanel" parent="." instance=ExtResource("11_cr5nk")]
+layout_mode = 2
+views = Dictionary[String, PackedScene]({
+"ADVANCED_SEARCH": ExtResource("13_31vlt"),
+"FILEINFO": ExtResource("15_rw61a"),
+"TAG_MANAGER": ExtResource("12_cr5nk")
+})
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -218,14 +254,17 @@ steps = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4"),
 access = 2
 use_native_dialog = true
 
-[connection signal="pressed" from="MarginContainer/HBoxContainer/Back" to="." method="_on_Back_pressed"]
-[connection signal="pressed" from="MarginContainer/HBoxContainer/Home" to="." method="_on_Home_pressed"]
-[connection signal="pressed" from="MarginContainer/HBoxContainer/CreateDir" to="." method="_on_CreateDir_pressed"]
-[connection signal="text_changed" from="MarginContainer/HBoxContainer/Search" to="." method="_on_Search_text_changed"]
-[connection signal="pressed" from="MarginContainer/HBoxContainer/OpenLibrary" to="." method="_on_OpenLibrary_pressed"]
-[connection signal="item_rect_changed" from="ScrollContainer" to="ScrollContainer" method="_on_item_rect_changed"]
-[connection signal="pressed" from="MarginContainer2/HBoxContainer/CloseLib" to="." method="_on_CloseLib_pressed"]
-[connection signal="page_update" from="MarginContainer2/HBoxContainer/Pagination" to="." method="_on_Pagination_page_update"]
+[connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/Back" to="." method="_on_Back_pressed"]
+[connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/Home" to="." method="_on_Home_pressed"]
+[connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/CreateDir" to="." method="_on_CreateDir_pressed"]
+[connection signal="text_changed" from="Browser/MarginContainer/HBoxContainer/Search" to="." method="_on_Search_text_changed"]
+[connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/AdvancedFilter" to="." method="_on_advanced_filter_pressed"]
+[connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/TagManager" to="." method="_on_tag_manager_pressed"]
+[connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/OpenLibrary" to="." method="_on_OpenLibrary_pressed"]
+[connection signal="item_rect_changed" from="Browser/ScrollContainer" to="Browser/ScrollContainer" method="_on_item_rect_changed"]
+[connection signal="pressed" from="Browser/MarginContainer2/HBoxContainer/CloseLib" to="." method="_on_CloseLib_pressed"]
+[connection signal="page_update" from="Browser/MarginContainer2/HBoxContainer/Pagination" to="." method="_on_Pagination_page_update"]
+[connection signal="closed" from="SidePanel" to="." method="_on_side_panel_closed"]
 [connection signal="refresh_ui" from="CanvasLayer/DirectoryMoveDialog" to="." method="_on_refresh_ui"]
 [connection signal="name_entered" from="CanvasLayer/InputBox" to="." method="_on_InputBox_name_entered"]
 [connection signal="confirmed" from="CanvasLayer/DeleteDirDialog" to="." method="_on_DeleteDirDialog_confirmed"]
