@@ -1,7 +1,5 @@
 extends Window
 
-signal refresh_ui()
-
 const FOLDER_ICON = preload("res://Assets/Material Icons/folder.svg")
 
 @onready var _Tree := $MarginContainer/VBoxContainer/Tree
@@ -11,7 +9,7 @@ const FOLDER_ICON = preload("res://Assets/Material Icons/folder.svg")
 var _Root : TreeItem
 var _Selected : TreeItem
 
-var _Dataset = null
+var _asset = null
 
 func _ready() -> void:
 	_Root = _Tree.create_item()
@@ -28,9 +26,9 @@ func _size_changed() -> void:
 
 # Reloads the directories and shows the dialog.
 func show_dialog(data) -> void:
-	_Dataset = data
-	if (_Dataset is Array) && _Dataset.size() == 1:
-		_Dataset = _Dataset[0]
+	_asset = data
+	if (_asset is Array) && _asset.size() == 1:
+		_asset = _asset[0]
 	_MoveButton.disabled = true
 	_LinkButton.disabled = true
 	
@@ -69,32 +67,25 @@ func _on_Cancel_pressed() -> void:
 func _on_Tree_item_selected() -> void:
 	_Selected = _Tree.get_selected()
 	
-	if _Dataset is Array:
+	if _asset is Array:
 		_MoveButton.disabled = false
 		_LinkButton.disabled = false
 	else:
 		var buttonDisabled : bool = (_Selected == null)
-		if _Dataset is AMDirectory:
-			buttonDisabled = buttonDisabled || (_Dataset.id == _Selected.get_metadata(0)) || (_Selected.get_metadata(0) == _Dataset.parent_id)
+		if _asset is AMDirectory:
+			buttonDisabled = buttonDisabled || (_asset.id == _Selected.get_metadata(0)) || (_Selected.get_metadata(0) == _asset.parent_id)
 		else:
-			buttonDisabled = buttonDisabled || (_Selected.get_metadata(0) == 0) || AssetsLibrary.is_asset_in_dir(_Dataset.id, _Selected.get_metadata(0))
+			buttonDisabled = buttonDisabled || (_Selected.get_metadata(0) == 0) || AssetsLibrary.is_asset_in_dir(_asset.id, _Selected.get_metadata(0))
 		
 		_MoveButton.disabled = buttonDisabled
-		_LinkButton.disabled = (_Dataset is AMDirectory) || buttonDisabled
+		_LinkButton.disabled = (_asset is AMDirectory) || buttonDisabled
 
 func _on_Move_pressed() -> void:
-	if _Dataset is Array:
-		AssetsLibrary.bulk_move(_Dataset, _Selected.get_metadata(0))
-	else:
-		AssetsLibrary.move(_Dataset, _Selected.get_metadata(0))
-	
-	emit_signal("refresh_ui")
+	AssetsLibrary.move(_asset, _Selected.get_metadata(0), false)
+	BrowserManager.refresh_ui()
 	hide()
 
 func _on_Link_pressed():
-	if _Dataset is Array:
-		AssetsLibrary.bulk_link(_Dataset, _Selected.get_metadata(0))
-	else:
-		AssetsLibrary.link_asset(_Dataset.id, _Selected.get_metadata(0))
-	emit_signal("refresh_ui")
+	AssetsLibrary.move(_asset, _Selected.get_metadata(0), true)
+	BrowserManager.refresh_ui()
 	hide()

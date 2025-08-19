@@ -3,7 +3,9 @@ extends HBoxContainer
 const ASSET_CARD = preload("res://Browser/AssetCard.tscn")
 const ITEMS_PER_PAGE : int = 100
 
-@onready var _Cards := $Browser/ScrollContainer/CenterContainer/Cards
+signal change_dir()
+
+@onready var _Cards := $Browser/ScrollContainer/Panel/Cards
 @onready var _ImporterDialog := $CanvasLayer/ImporterDialog
 @onready var _DirectoryMoveDialog := $CanvasLayer/DirectoryMoveDialog
 @onready var _Pagination := $Browser/MarginContainer2/HBoxContainer/Pagination
@@ -26,7 +28,7 @@ const ITEMS_PER_PAGE : int = 100
 
 var _DirectoriesToDelete : Array[AMDirectory] = []
 var _VisibleCards : int = 0
-var _FilesToApprove : Array[Dictionary] = []
+var _FilesToApprove : Array[AMImportFile] = []
 
 var _Thumbnail : Texture2D = null
 var _ThumbnailThread : Thread = null
@@ -96,7 +98,7 @@ func _process(_delta):
 		_ThumbnailThread = null
 	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.is_empty() && \
 		 !_OverwriteDialog.visible:
-		var file : Dictionary = _FilesToApprove.back()
+		var file : AMImportFile = _FilesToApprove.back()
 		match file.status:
 			AssetsLibrary.FileImportStatus.STATUS_OVERWRITE:
 				# Starts a new render thread, if there is currently no thumnail available.
@@ -138,7 +140,7 @@ func _update_total_import_assets(total_files : int) -> void:
 
 # Called everytime an asset file is either a duplicate
 # or is dropped into a new folder.
-func _files_to_check(files: Array[Dictionary]) -> void:
+func _files_to_check(files: Array[AMImportFile]) -> void:
 	_FilesToApprove.append_array(files)
 
 # Called if a new assets were successfully imported
@@ -153,7 +155,7 @@ func _new_asset_added(asset: AMAsset) -> void:
 			if !(child is AssetCard) || !child.visible:
 				break
 				
-			if child.dataset.id == asset.id:
+			if child.asset.id == asset.id:
 				tmp = child
 				break
 		
@@ -165,7 +167,7 @@ func _new_asset_added(asset: AMAsset) -> void:
 				tmp = _Cards.get_child(_VisibleCards)
 			
 		tmp.set_parent_folder(AssetsLibrary.current_directory)
-		tmp.dataset = asset
+		tmp.asset = asset
 		tmp.visible = true
 		_VisibleCards += 1
 	else:
@@ -220,14 +222,14 @@ func _on_Pagination_page_update(page : int) -> void:
 			tmp.set_parent_folder(card.parent_id)
 			
 			# Fill the needed informations for a card.
-			tmp.dataset = card
+			tmp.asset = card
 
 # ---------------------------------------------
 # 			    Card signals
 # ---------------------------------------------
 
-func _move_to_directory_pressed(datasets: Array) -> void:
-	_DirectoryMoveDialog.show_dialog(datasets)
+func _move_to_directory_pressed(assets: Array) -> void:
+	_DirectoryMoveDialog.show_dialog(assets)
 	
 func _show_links(id: int) -> void:
 	_AssetLinksDialog.set_asset_id(id)
@@ -238,6 +240,9 @@ func _card_pressed(data, is_dir : bool) -> void:
 	if is_dir:
 		BrowserManager.deselect_all()
 		
+		if data == null:
+			data = 0
+		
 		AssetsLibrary.current_directory = data.id if data is AMDirectory else data
 		BrowserManager.update_search({"directory_id": data.id if data is AMDirectory else data})
 
@@ -245,6 +250,8 @@ func _card_pressed(data, is_dir : bool) -> void:
 		_HomeButton.mouse_default_cursor_shape = _BackButton.mouse_default_cursor_shape
 		_BackButton.disabled = AssetsLibrary.current_directory == 0
 		_HomeButton.disabled = _BackButton.disabled
+		
+		change_dir.emit()
 	else:
 		_show_file_info(data)
 
@@ -255,24 +262,24 @@ func _show_file_info(asset) -> void:
 		_SidePanel.show_view("FILEINFO").asset = asset
 
 # Exports an asset
-func _export_assets(datasets: Array) -> void:
-	if datasets.is_empty():
+func _export_assets(assets: Array) -> void:
+	if assets.is_empty():
 		return
 	
-	if (datasets.size() > 1) || (datasets[0] is AMDirectory):
+	if (assets.size() > 1) || (assets[0] is AMDirectory):
 		_NativeDialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
 	else:
 		_NativeDialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	
 	var path : String = ""
 	_NativeDialog.popup_centered()
-	if (datasets.size() > 1) || (datasets[0] is AMDirectory):
+	if (assets.size() > 1) || (assets[0] is AMDirectory):
 		path = await _NativeDialog.dir_selected
 	else:
 		path = await _NativeDialog.file_selected
 	
 	if !path.is_empty():
-		AssetsLibrary.export_assets(datasets, path)
+		AssetsLibrary.export_assets(assets, path)
 
 func _delete_card(dirs: Array[AMDirectory]) -> void:
 	_DirectoriesToDelete = dirs
@@ -308,9 +315,9 @@ func _on_InputBox_name_entered(p_name : String) -> void:
 	if name.is_empty():
 		return
 		
-	if AssetsLibrary.get_directory_id(AssetsLibrary.current_directory, p_name) == 0:
+	if !AssetsLibrary.dir_exists(AssetsLibrary.current_directory, p_name):
 		var dir := AssetsLibrary.create_directory(AssetsLibrary.current_directory, p_name)
-		if dir != 0:
+		if dir != null:
 			var tmp: AssetCard
 			
 			# Checks if we can resuse a card or a new one needs to be created.
@@ -323,10 +330,7 @@ func _on_InputBox_name_entered(p_name : String) -> void:
 			# A new directory will be move to the first place in the container.
 			_Cards.move_child(tmp, 0)
 			
-			var card := AMDirectory.new()
-			card.id = dir
-			card.name = p_name
-			tmp.dataset = card
+			tmp.asset = dir
 			tmp.set_parent_folder(AssetsLibrary.current_directory)
 			tmp.visible = true
 		else:
@@ -338,24 +342,18 @@ func _on_InputBox_name_entered(p_name : String) -> void:
 
 # Leave a subdirectory.
 func _on_Back_pressed() -> void:
-	var dir := AMDirectory.new()
-	dir.id = AssetsLibrary.get_parent_dir_id(AssetsLibrary.current_directory)
-	
+	var dir = AssetsLibrary.get_parent_dir(AssetsLibrary.current_directory)
 	_card_pressed(dir, true)
 
 # Deletes a directory.
 func _on_DeleteDirDialog_confirmed() -> void:
 	var gotoroot = false
-	if _DirectoriesToDelete.size() > 1:
-		for dir in _DirectoriesToDelete:
-			if dir.id == AssetsLibrary.current_directory:
-				gotoroot = true
-				break 
-		
-		AssetsLibrary.bulk_delete_directories(_DirectoriesToDelete)
-	elif _DirectoriesToDelete.size() == 1:
-		gotoroot = _DirectoriesToDelete[0].id == AssetsLibrary.current_directory
-		AssetsLibrary.delete_directory(_DirectoriesToDelete[0].id)
+	for dir in _DirectoriesToDelete:
+		if dir.id == AssetsLibrary.current_directory:
+			gotoroot = true
+			break 
+			
+	AssetsLibrary.delete(_DirectoriesToDelete)
 	
 	# Go back into the root directory.
 	if gotoroot:

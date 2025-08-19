@@ -36,7 +36,7 @@ func _on_Cancel_pressed():
 	hide()
 
 func _on_Unlink_pressed():
-	AssetsLibrary.unlink_asset(_AssetId, _SelectedDirectory)
+	AssetsLibrary.delete_link(_AssetId, _SelectedDirectory)
 	_Directories.remove_item(_SelectedIndex)
 	_reset()
 	

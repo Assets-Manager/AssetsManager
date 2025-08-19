@@ -20,11 +20,13 @@ static func get_extensions() -> Array:
 		"fbx"
 	]
 	
-func _import_asset(path : String, update_id : int) -> int:
-	var ret : int = super._import_asset(path, update_id)
-	if (ret == OK) && (path.get_extension().to_lower() == "obj"):
-		ret = DirAccess.rename_absolute(path.get_basename() + ".mtl", _Library.generate_and_migrate_assets_path(path.get_basename().get_file() + ".mtl", update_id))
-	return ret
+func move_asset(from: String, to: String) -> bool:
+	if super.move_asset(from, to):
+		if from.get_extension().to_lower() == "obj":
+			if DirAccess.rename_absolute(from.get_basename() + ".mtl", to.get_basename() + ".mtl") == OK:
+				return true
+		return true
+	return false
 	
 func render_thumbnail(path: String) -> Texture2D:
 	return _Preview.generate(path)

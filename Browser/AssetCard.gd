@@ -7,16 +7,16 @@ signal pressed(data, is_dir: bool)
 
 ## Called if one or more cards should be delete
 ## [br]
-## - [param dirs], this could be either the dataset of this card or an array of datasets for bulk deletetion
+## - [param dirs], this could be either the asset of this card or an array of assets for bulk deletetion
 signal delete_card(dirs: Array[AMDirectory])
 
-## Allows to export all selected datasets
-signal export_assets(datasets: Array)
+## Allows to export all selected assets
+signal export_assets(assets: Array)
 
 ## Called if a card should be moved via the move dialog
 ## [br]
-## - [param datasets], array of datasets for bulk movement
-signal move_to_directory_pressed(datasets: Array)
+## - [param assets], array of assets for bulk movement
+signal move_to_directory_pressed(assets: Array)
 signal open_containing_folder(parent_folder: int)
 signal show_links(id: int)
 
@@ -36,7 +36,7 @@ signal show_links(id: int)
 static var _CurrentVisibleEditField : LineEdit = null
 
 var is_dir : bool = false : get = _get_is_dir
-var dataset = null : set = _set_dataset
+var asset = null : set = _set_asset
 var _ParentFolder : int = 0
 
 func _ready() -> void:
@@ -63,25 +63,25 @@ func set_parent_folder(parent_folder : int) -> void:
 	_OpenFolder.visible = _ParentFolder != AssetsLibrary.current_directory
 
 func _get_is_dir() -> bool:
-	return (dataset != null) && (dataset is AMDirectory)
+	return (asset != null) && (asset is AMDirectory)
 
-func _set_dataset(p_dataset) -> void:
-	dataset = p_dataset
+func _set_asset(p_asset) -> void:
+	asset = p_asset
 	_update_controls()
-	if dataset is AMDirectory:
+	if asset is AMDirectory:
 		_Texture.texture = FOLDER_ICON
 		_Info.visible = true
-		_set_title(dataset.name)
-	elif dataset is AMAsset:
-		_Texture.texture = dataset.thumbnail
+		_set_title(asset.name)
+	elif asset is AMAsset:
+		_Texture.texture = asset.thumbnail
 		_Info.visible = false
-		_set_title(dataset.filename)
+		_set_title(asset.filename)
 
 func _update_controls() -> void:
 	_Delete.visible = is_dir
 	mouse_default_cursor_shape = Control.CURSOR_MOVE if !is_dir else Control.CURSOR_POINTING_HAND
 
-	_ShowLinks.visible = (AssetsLibrary.get_asset_linked_dirs(dataset.id).size() > 1) && !is_dir
+	_ShowLinks.visible = (AssetsLibrary.get_asset_linked_dirs(asset.id).size() > 1) && !is_dir
 	_RemoveLink.visible = (AssetsLibrary.current_directory != 0) && !is_dir
 
 func _set_title(title : String) -> void:
@@ -113,31 +113,34 @@ func _on_Card_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if (event.button_index == MOUSE_BUTTON_LEFT) && !event.pressed:
 			if event.ctrl_pressed || BrowserManager.tagging_mode:
-				if BrowserManager.tagging_mode && is_in_group("selected_assets_cards"):
-					remove_from_group("selected_assets_cards")
-					_change_selection_state(false)
-				else:
-					add_to_group("selected_assets_cards")
-					_change_selection_state(true)
-					
-				BrowserManager.emit_card_selection_changed()
+				select()
 			else:
 				BrowserManager.deselect_all()
-				emit_signal("pressed", dataset, is_dir)
+				emit_signal("pressed", asset, is_dir)
+				
+			accept_event()
+
+func select() -> void:
+	if BrowserManager.tagging_mode && is_in_group("selected_assets_cards"):
+		remove_from_group("selected_assets_cards")
+		_change_selection_state(false)
+	else:
+		add_to_group("selected_assets_cards")
+		_change_selection_state(true)
+	
+	BrowserManager.emit_card_selection_changed()
 
 func _on_Delete_pressed() -> void:
-	var datasets : Array[AMDirectory] = BrowserManager.get_selected_directories(dataset)
-	if !datasets.is_empty():
-		emit_signal("delete_card", datasets)
+	var assets : Array[AMDirectory] = BrowserManager.get_selected_directories(asset)
+	if !assets.is_empty():
+		emit_signal("delete_card", assets)
 
 func _can_drop_data(_position: Vector2, data) -> bool:
 	return is_dir && ((!(data is Array) && data != self) || data is Array)
 
 func _drop_data(_position: Vector2, data) -> void:
-	if data is Array:
-		AssetsLibrary.bulk_move(data, dataset.id)
-	else:
-		AssetsLibrary.move(data, dataset.id)
+	AssetsLibrary.move(data, asset.id, false)
+	BrowserManager.deselect_all()
 	BrowserManager.refresh_ui()
 
 func _get_drag_data(_position: Vector2):
@@ -150,38 +153,41 @@ func _get_drag_data(_position: Vector2):
 		hflow.add_theme_constant_override("v_separation", -100)
 		
 		var zindex = nodes.size()
-		var datasets : Array = []
+		var assets : Array = []
 		for node in nodes:
 			var tmp : AssetCard = node.duplicate()
 			tmp.z_index = zindex
 			zindex -= 1
 			hflow.add_child(tmp)
-			datasets.push_back(node.dataset)
+			assets.push_back(node.asset)
 		set_drag_preview(hflow)
-		return datasets
+		return assets
 	
 	var card : Control = self.duplicate()
 	card.modulate.a = 0.5
 	set_drag_preview(card)
-	return self.dataset
+	return self.asset
 
 func _on_Export_pressed() -> void:
-	var datasets : Array = BrowserManager.get_selected_datasets(dataset)
-	if !datasets.is_empty():
-		emit_signal("export_assets", datasets)
+	var assets : Array = BrowserManager.get_selected_assets(asset)
+	if !assets.is_empty():
+		emit_signal("export_assets", assets)
 
 func _on_OpenFolder_pressed() -> void:
 	emit_signal("open_containing_folder", _ParentFolder)
 
 func _on_Move_pressed() -> void:
-	emit_signal("move_to_directory_pressed", BrowserManager.get_selected_datasets(dataset))
+	emit_signal("move_to_directory_pressed", BrowserManager.get_selected_assets(asset))
 
 func _on_RemoveLink_pressed():
-	AssetsLibrary.bulk_unlink_assets(BrowserManager.get_selected_datasets(dataset), AssetsLibrary.current_directory)
+	var data = BrowserManager.get_selected_assets(asset)
+	for d in data:
+		if d is AMAsset:
+			AssetsLibrary.delete_link(d.id, AssetsLibrary.current_directory)
 	BrowserManager.refresh_ui()
 
 func _on_ShowLinks_pressed():
-	emit_signal("show_links", dataset.id)
+	emit_signal("show_links", asset.id)
 
 func _on_title_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -200,7 +206,7 @@ func _on_title_gui_input(event: InputEvent) -> void:
 			_CurrentVisibleEditField = _EditField
 
 func _on_edit_field_text_submitted(new_text: String) -> void:
-	if AssetsLibrary.rename(dataset.id, new_text, is_dir):
+	if AssetsLibrary.rename(asset, new_text):
 		_set_title(new_text)
 	_EditField.hide()
 	_CurrentVisibleEditField = null
@@ -220,4 +226,4 @@ func _on_edit_field_gui_input(event: InputEvent) -> void:
 			accept_event()
 
 func _on_info_pressed() -> void:
-	BrowserManager.show_file_info(dataset)
+	BrowserManager.show_file_info(asset)

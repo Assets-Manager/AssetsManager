@@ -17,6 +17,8 @@ func _ready() -> void:
 
 func _on_clear_pressed() -> void:
 	_Tags.deselect_all()
+	var tags : Array[AMTag] = []
+	BrowserManager.update_search({"tags": tags})
 
 func _on_item_list_multi_selected(_index: int, _selected: bool) -> void:
 	var tags : Array[AMTag] = []

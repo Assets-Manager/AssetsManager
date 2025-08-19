@@ -10,10 +10,10 @@ const CARD = preload("res://Browser/Dialogs/AssetInfoCard.tscn")
 @onready var _LinkBtn := $MarginContainer/VBoxContainer/HBoxContainer/Link
 
 var _SelectedCard = null
-var _ImportAsset : Dictionary = {}
+var _ImportAsset : AMImportFile = null
 
 # Sets the new asset info
-func set_new_asset(thumb : Texture2D, asset : Dictionary) -> void:
+func set_new_asset(thumb : Texture2D, asset : AMImportFile) -> void:
 	_NewAsset.thumbnail = thumb
 	_ImportAsset = asset
 	_NewAsset.text = _ImportAsset.file.get_file()
@@ -23,11 +23,10 @@ func set_new_asset(thumb : Texture2D, asset : Dictionary) -> void:
 	# Gets a list with all assets, which shares the same name
 	var assets: Array[AMAsset] = AssetsLibrary.get_assets_by_name(_ImportAsset.file)
 	for dbasset in assets:	# Add them to the dialog
-		dbasset["name"] = dbasset["filename"]
 		_add_asset(dbasset.id, AssetsLibrary.load_thumbnail(dbasset), dbasset.filename)
 
 func _directory_id() -> int:
-	if _ImportAsset.has("parent_id") && (_ImportAsset.parent_id != 0):
+	if _ImportAsset.parent_id != 0:
 		return _ImportAsset.parent_id
 		
 	return AssetsLibrary.current_directory
@@ -69,7 +68,7 @@ func _on_New_pressed():
 
 func _on_Cancel_pressed():
 	# Cleanup
-	_ImportAsset = {}
+	_ImportAsset = null
 	_SelectedCard = null
 	_OverwriteBtn.disabled = true
 	_LinkBtn.disabled = true
@@ -79,11 +78,11 @@ func _on_Cancel_pressed():
 
 # Overwrites a selected assets
 func _on_Overwrite_pressed():
-	_ImportAsset["overwrite_id"] = _SelectedCard.id
+	_ImportAsset.overwrite_id = _SelectedCard.id
 	AssetsLibrary.handle_user_processed_file(_ImportAsset)
 	_on_Cancel_pressed()
 
 # Links the selected asset with the current directory.
 func _on_Link_pressed():
-	AssetsLibrary.link_asset(_SelectedCard.id, _directory_id())
+	AssetsLibrary.move(_SelectedCard, _directory_id(), true)
 	_on_Cancel_pressed()

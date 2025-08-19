@@ -11,6 +11,8 @@ func _ready():
 		_DisclaimerDialog.hide()
 		_DisclaimerDialog.force_native = true
 		_DisclaimerDialog.popup_centered()
+	else:
+		call_deferred("_start_tour")
 	
 	# Reopens the last loaded library.
 	if !ProgramManager.settings.last_opened.is_empty():
@@ -26,8 +28,6 @@ func _ready():
 		tmp.add_theme_color_override("font_color", Color("#6e9dff"))
 		tmp.connect("pressed", Callable(self, "_open_recent").bind(recent))
 		_Recent.add_child(tmp)
-		
-	call_deferred("_start_tour")
 
 func _switch_scene() -> void:
 	get_tree().change_scene_to_file("res://Browser/Browser.tscn")
@@ -90,3 +90,6 @@ func _on_DisclaimerDialog_popup_hide():
 
 func _on_GodotTour_tour_finished():
 	ProgramManager.settings.tutorial_step = ProgramManager.settings.TutorialStep.LIBRARY_SCREEN
+
+func _on_disclaimer_dialog_disclaimer_accepted() -> void:
+	call_deferred("_start_tour")

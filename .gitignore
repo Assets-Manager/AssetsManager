@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 addons/godot-sqlite/*
+addons/gdUnit4/*
 *.dll
 *.so
 *.tar*

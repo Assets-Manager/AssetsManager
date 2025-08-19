@@ -1,4 +1,3 @@
-@tool
 class_name TagManager extends MarginContainer
 
 signal changed
@@ -52,7 +51,7 @@ func _exit_tree() -> void:
 	BrowserManager.card_selection_changed.disconnect(_card_selection_changed)
 
 func _card_selection_changed() -> void:
-	var selected = BrowserManager.get_selected_datasets(null)
+	var selected = BrowserManager.get_selected_assets(null)
 	_SaveTags.disabled = selected.is_empty()
 
 func get_selected_tags() -> Array[AMTag]:
@@ -105,6 +104,8 @@ func _on_delete_pressed() -> void:
 func _on_confirmation_dialog_confirmed() -> void:
 	for idx in _Tags.get_selected_items():
 		AssetsLibrary.delete_tag(_Tags.get_item_metadata(idx))
+	BrowserManager.tagging_mode = false
+	_Delete.disabled = true
 	_update_tags()
 
 func _on_item_list_empty_clicked(_at_position: Vector2, _mouse_button_index: int) -> void:
@@ -116,7 +117,7 @@ func _on_item_list_empty_clicked(_at_position: Vector2, _mouse_button_index: int
 		BrowserManager.tagging_mode = false
 
 func _on_save_tags_pressed() -> void:
-	_SelectedAssets = BrowserManager.get_selected_datasets(null)
+	_SelectedAssets = BrowserManager.get_selected_assets(null)
 	var showDialog = false
 	for asset in _SelectedAssets:
 		if asset is AMDirectory:

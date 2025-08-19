@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://c5wq0ri5bodkn"]
+[gd_scene load_steps=37 format=3 uid="uid://c5wq0ri5bodkn"]
 
 [ext_resource type="PackedScene" uid="uid://o8fiejmiwke3" path="res://Browser/Dialogs/ImporterDialog.tscn" id="1"]
 [ext_resource type="Script" uid="uid://7m4prb8mx2w5" path="res://Browser/CenterContainer.gd" id="2"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://vvlqtk6vu0dh" path="res://Browser/Dialogs/ConfirmationDialog.gd" id="7"]
 [ext_resource type="Texture2D" uid="uid://by0b1i7sqxgph" path="res://Assets/Material Icons/home.svg" id="9"]
 [ext_resource type="PackedScene" uid="uid://disku4y5k60f5" path="res://Browser/Dialogs/DirectoryMoveDialog.tscn" id="10"]
+[ext_resource type="Script" uid="uid://c087bva7lcbdh" path="res://Browser/SelectionRect.gd" id="10_fbiw6"]
 [ext_resource type="Texture2D" uid="uid://cbk6ihl3h1bi0" path="res://Assets/Material Icons/folder_open.svg" id="11"]
 [ext_resource type="PackedScene" uid="uid://kge5t0cmst51" path="res://Browser/SidePanel.tscn" id="11_cr5nk"]
 [ext_resource type="Script" uid="uid://6yo1b3auudwa" path="res://Startscreen/AcceptDialog.gd" id="12"]
@@ -24,6 +25,8 @@
 [ext_resource type="Script" uid="uid://b87d1fb76imw" path="res://addons/godottour/TourStep.gd" id="17"]
 [ext_resource type="PackedScene" uid="uid://butw3mql7nhbd" path="res://Browser/Dialogs/OverwriteDialog.tscn" id="18"]
 [ext_resource type="PackedScene" uid="uid://c3pmo435s85nl" path="res://Browser/Dialogs/AssetLinksDialog.tscn" id="19"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_fbiw6"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("17")
@@ -44,6 +47,16 @@ text = "Creates a new directory. (Directories are only virtual and are not creat
 script = ExtResource("17")
 control = NodePath("../../Browser/MarginContainer/HBoxContainer/Search")
 text = "Allows you to search for assets and directories. If you are in the root directory, the entire library will be searched."
+
+[sub_resource type="Resource" id="Resource_rw61a"]
+script = ExtResource("17")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/AdvancedFilter")
+text = "For a more fine search you can use the advanced filter options."
+
+[sub_resource type="Resource" id="Resource_fbiw6"]
+script = ExtResource("17")
+control = NodePath("../../Browser/MarginContainer/HBoxContainer/TagManager")
+text = "The tag manager allows you to create and manage tags for your assets."
 
 [sub_resource type="Resource" id="5"]
 script = ExtResource("17")
@@ -160,19 +173,35 @@ layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2")
 
-[node name="CenterContainer" type="CenterContainer" parent="Browser/ScrollContainer"]
+[node name="Panel" type="Panel" parent="Browser/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBoxEmpty_fbiw6")
 
-[node name="Cards" type="HFlowContainer" parent="Browser/ScrollContainer/CenterContainer"]
-custom_minimum_size = Vector2(960, 540)
-layout_mode = 2
+[node name="Cards" type="HFlowContainer" parent="Browser/ScrollContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/h_separation = 0
 theme_override_constants/v_separation = 0
 alignment = 1
+
+[node name="SelectionRect" type="ColorRect" parent="Browser/ScrollContainer/Panel"]
+visible = false
+layout_mode = 2
+offset_left = 430.0
+offset_top = 220.0
+offset_right = 430.0
+offset_bottom = 220.0
+color = Color(0.862745, 0.454902, 0.0705882, 0.501961)
+script = ExtResource("10_fbiw6")
 
 [node name="MarginContainer2" type="MarginContainer" parent="Browser"]
 layout_mode = 2
@@ -248,12 +277,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("16")
-steps = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4"), SubResource("5"), SubResource("6"), SubResource("7"), SubResource("8")]
+steps = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4"), SubResource("Resource_rw61a"), SubResource("Resource_fbiw6"), SubResource("5"), SubResource("6"), SubResource("7"), SubResource("8")]
 
 [node name="NativeDialog" type="FileDialog" parent="."]
 access = 2
 use_native_dialog = true
 
+[connection signal="change_dir" from="." to="Browser/ScrollContainer" method="_on_browser_change_dir"]
 [connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/Back" to="." method="_on_Back_pressed"]
 [connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/Home" to="." method="_on_Home_pressed"]
 [connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/CreateDir" to="." method="_on_CreateDir_pressed"]
@@ -262,10 +292,10 @@ use_native_dialog = true
 [connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/TagManager" to="." method="_on_tag_manager_pressed"]
 [connection signal="pressed" from="Browser/MarginContainer/HBoxContainer/OpenLibrary" to="." method="_on_OpenLibrary_pressed"]
 [connection signal="item_rect_changed" from="Browser/ScrollContainer" to="Browser/ScrollContainer" method="_on_item_rect_changed"]
+[connection signal="item_rect_changed" from="Browser/ScrollContainer/Panel/Cards" to="Browser/ScrollContainer" method="_on_cards_item_rect_changed"]
 [connection signal="pressed" from="Browser/MarginContainer2/HBoxContainer/CloseLib" to="." method="_on_CloseLib_pressed"]
 [connection signal="page_update" from="Browser/MarginContainer2/HBoxContainer/Pagination" to="." method="_on_Pagination_page_update"]
 [connection signal="closed" from="SidePanel" to="." method="_on_side_panel_closed"]
-[connection signal="refresh_ui" from="CanvasLayer/DirectoryMoveDialog" to="." method="_on_refresh_ui"]
 [connection signal="name_entered" from="CanvasLayer/InputBox" to="." method="_on_InputBox_name_entered"]
 [connection signal="confirmed" from="CanvasLayer/DeleteDirDialog" to="." method="_on_DeleteDirDialog_confirmed"]
 [connection signal="tour_finished" from="CanvasLayer/GodotTour" to="." method="_on_GodotTour_tour_finished"]

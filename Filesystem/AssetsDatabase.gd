@@ -23,15 +23,23 @@ func close() -> void:
 # 				Query functions
 # ---------------------------------------------
 
-# Starts a query, with parameters.
-# This function is thread safe.
-func query_with_bindings(query: String, bindings: Array) -> Array[Dictionary]:
+## Starts a query, with parameters.
+## This function is thread safe.
+func query_with_bindings_with_qresult(query: String, bindings: Array) -> Array[Dictionary]:
 	var result : Array[Dictionary] = []
 	if _DB:
 		_Lock.lock()
-		print(query)
 		if _DB.query_with_bindings(query, bindings):
 			result = _DB.query_result
+		_Lock.unlock()
+		
+	return result
+
+func query_with_bindings(query: String, bindings: Array) -> bool:
+	var result : bool = false
+	if _DB:
+		_Lock.lock()
+		result = _DB.query_with_bindings(query, bindings)
 		_Lock.unlock()
 		
 	return result
@@ -148,14 +156,30 @@ func _migrate() -> bool:
 
 		if tables.find("directories") == -1:
 			ret = _DB.query(
-				"CREATE TABLE 'directories' ('id' INTEGER, 'name' TEXT NOT NULL, 'parent_id' INTEGER, FOREIGN KEY('parent_id') REFERENCES 'directories'('id') ON DELETE CASCADE, PRIMARY KEY('id' AUTOINCREMENT));"
+				"""
+				CREATE TABLE 'directories' (
+					'id' INTEGER, 
+					'name' TEXT NOT NULL, 
+					'parent_id' INTEGER, 
+					FOREIGN KEY('parent_id') REFERENCES 'directories'('id') ON DELETE CASCADE, 
+					PRIMARY KEY('id' AUTOINCREMENT)
+				);
+				"""
 			)
 		else:
 			ret = true
 
 		if tables.find("asset_directory_rel") == -1:
 			ret = _DB.query(
-				"CREATE TABLE 'asset_directory_rel' ('ref_assets_id' INTEGER,'ref_directory_id'	INTEGER,PRIMARY KEY('ref_assets_id','ref_directory_id'), FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE);"
+				"""
+				CREATE TABLE 'asset_directory_rel' (
+					'ref_assets_id' INTEGER,
+					'ref_directory_id' INTEGER,
+					PRIMARY KEY('ref_assets_id','ref_directory_id'), 
+					FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, 
+					FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE
+				);
+				"""
 			)
 		else:
 			ret = true
@@ -180,14 +204,32 @@ func _migrate() -> bool:
 
 		if tables.find("tag_directory_rel") == -1:
 			ret = _DB.query(
-				"CREATE TABLE 'tag_directory_rel' ('ref_tag_id' INTEGER, 'ref_directory_id' INTEGER, PRIMARY KEY('ref_tag_id', 'ref_directory_id'), FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, FOREIGN KEY('ref_tag_id') REFERENCES 'tags'('id') ON DELETE CASCADE);"
+				"""
+				CREATE TABLE 'tag_directory_rel' (
+					'ref_tag_id' INTEGER, 
+					'ref_directory_id' INTEGER, 
+					PRIMARY KEY('ref_tag_id', 'ref_directory_id'), 
+					FOREIGN KEY('ref_directory_id') REFERENCES 'directories'('id') ON DELETE CASCADE, 
+					FOREIGN KEY('ref_tag_id') REFERENCES 'tags'('id') ON DELETE CASCADE,
+					UNIQUE('ref_tag_id', 'ref_directory_id')
+				);
+				"""
 			)
 		else:
 			ret = true
 
 		if tables.find("tag_asset_rel") == -1:
 			ret = _DB.query(
-				"CREATE TABLE 'tag_asset_rel' ('ref_assets_id' INTEGER, 'ref_tag_id' INTEGER, PRIMARY KEY('ref_assets_id', 'ref_tag_id'), FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE, FOREIGN KEY('ref_tag_id') REFERENCES 'tags'('id') ON DELETE CASCADE);"
+				"""
+				CREATE TABLE 'tag_asset_rel' (
+					'ref_assets_id' INTEGER, 
+					'ref_tag_id' INTEGER, 
+					PRIMARY KEY('ref_assets_id', 'ref_tag_id'), 
+					FOREIGN KEY('ref_assets_id') REFERENCES 'assets'('id') ON DELETE CASCADE, 
+					FOREIGN KEY('ref_tag_id') REFERENCES 'tags'('id') ON DELETE CASCADE,
+					UNIQUE('ref_assets_id', 'ref_tag_id')
+				);
+				"""
 			)
 		else:
 			ret = true

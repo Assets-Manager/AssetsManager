@@ -10,3 +10,5 @@ compatibility_minimum = "4.4"
 [libraries]
 
 windows.debug.x86_64 = "res://Native/libgdassetsmanager.dll"
+windows.release.x86_64 = "res://Native/libgdassetsmanager.dll"
+linux.release.x86_64 = "res://Native/libgdassetsmanager.so"

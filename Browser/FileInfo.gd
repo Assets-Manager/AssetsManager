@@ -5,6 +5,7 @@ extends MarginContainer
 @onready var _Save := $ScrollContainer/VBoxContainer/Save
 
 var asset = null : set = _set_asset
+var _currentTags : Array[AMTag] = []
 
 func _ready() -> void:
 	_set_asset(asset)
@@ -15,11 +16,27 @@ func _set_asset(value) -> void:
 	if _Name:
 		if asset:
 			_Name.text = asset.filename if asset is AMAsset else asset.name
-			_TagMgr.set_selected_tags(AssetsLibrary.get_tags(asset))
+			_currentTags = AssetsLibrary.get_tags(asset)
+			_TagMgr.set_selected_tags(_currentTags.duplicate())
 
 func _on_save_pressed() -> void:
-	AssetsLibrary.rename(asset.id, _Name.text, asset is AMDirectory)
-	AssetsLibrary.add_tags([asset], _TagMgr.get_selected_tags(), false)
+	AssetsLibrary.rename(asset, _Name.text)
+	var tags : Array[AMTag] = _TagMgr.get_selected_tags()
+	var tags_to_remove : Array[AMTag] = []
+	for current_tag in _currentTags:
+		var found = false
+		for tag in tags:
+			if current_tag.id == tag.id:
+				found = true
+				break
+		if !found:
+			tags_to_remove.push_back(current_tag)
+	
+	if !tags_to_remove.is_empty():
+		AssetsLibrary.remove_tags([asset], tags_to_remove, false)
+	
+	AssetsLibrary.add_tags([asset], tags, false)
+	_currentTags = tags
 	
 	_Save.disabled = true
 	BrowserManager.refresh_ui()

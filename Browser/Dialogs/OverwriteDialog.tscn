@@ -4,7 +4,6 @@
 [ext_resource type="PackedScene" uid="uid://ce5yjutkti46n" path="res://Browser/Dialogs/AssetInfoCard.tscn" id="2"]
 
 [node name="OverwriteDialog" type="Window"]
-position = Vector2i(0, 36)
 size = Vector2i(400, 300)
 exclusive = true
 script = ExtResource("1")

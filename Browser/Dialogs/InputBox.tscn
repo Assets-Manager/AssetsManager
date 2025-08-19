@@ -41,5 +41,7 @@ text = "Ok"
 layout_mode = 2
 text = "Cancel"
 
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="text_submitted" from="CenterContainer/MarginContainer/VBoxContainer/LineEdit" to="." method="_on_line_edit_text_submitted"]
 [connection signal="pressed" from="CenterContainer/MarginContainer/VBoxContainer/HBoxContainer/Ok" to="." method="_on_Ok_pressed"]
 [connection signal="pressed" from="CenterContainer/MarginContainer/VBoxContainer/HBoxContainer/Cancel" to="." method="_on_Cancel_pressed"]

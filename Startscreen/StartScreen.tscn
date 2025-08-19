@@ -34,6 +34,7 @@ anchor_bottom = 1.0
 script = ExtResource("3")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="VBoxContainer"]
@@ -84,6 +85,7 @@ use_native_dialog = true
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="InfoDialog" type="AcceptDialog" parent="CanvasLayer"]
+title = ""
 script = ExtResource("4")
 
 [node name="DisclaimerDialog" parent="CanvasLayer" instance=ExtResource("5")]
@@ -102,4 +104,5 @@ steps = [SubResource("1"), SubResource("2"), SubResource("3"), SubResource("4")]
 
 [connection signal="pressed" from="VBoxContainer/NewProject" to="." method="_on_NewProject_pressed"]
 [connection signal="pressed" from="VBoxContainer/OpenProject" to="." method="_on_OpenProject_pressed"]
+[connection signal="disclaimer_accepted" from="CanvasLayer/DisclaimerDialog" to="." method="_on_disclaimer_dialog_disclaimer_accepted"]
 [connection signal="tour_finished" from="CanvasLayer/GodotTour" to="." method="_on_GodotTour_tour_finished"]

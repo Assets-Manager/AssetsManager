@@ -18,3 +18,10 @@ func _on_Ok_pressed() -> void:
 	emit_signal("name_entered", _Text.text)
 	_Text.text = ""
 	hide()
+
+func _on_visibility_changed() -> void:
+	if visible:
+		_Text.grab_focus()
+
+func _on_line_edit_text_submitted(new_text: String) -> void:
+	_on_Ok_pressed()

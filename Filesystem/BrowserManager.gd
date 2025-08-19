@@ -27,7 +27,7 @@ func update_search(dict : Dictionary) -> void:
 	for prop in search.get_property_list():
 		if ((prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE) == PROPERTY_USAGE_SCRIPT_VARIABLE) && dict.has(prop["name"]):
 			search.set(prop["name"], dict[prop["name"]])
-			
+	
 	emit_signal("search_changed")
 
 func refresh_ui() -> void:
@@ -44,31 +44,31 @@ func reset_search() -> void:
 	search = AMSearch.new()
 	search.directory_id = AssetsLibrary.current_directory
 
-## Gets a list of all selected datasets
-func get_selected_datasets(default) -> Array:
-	var datasets : Array = []
+## Gets a list of all selected assets
+func get_selected_assets(default) -> Array:
+	var assets : Array = []
 	var nodes := get_tree().get_nodes_in_group("selected_assets_cards")
 	if !nodes.is_empty():
 		for node in nodes:
-			datasets.push_back(node.dataset)
+			assets.push_back(node.asset)
 	elif default:
-		datasets.push_back(default)
+		assets.push_back(default)
 		
-	return datasets
+	return assets
 
 ## Gets all selected directories.
-func get_selected_directories(dir) -> Array:
-	var datasets : Array = []
+func get_selected_directories(dir) -> Array[AMDirectory]:
+	var assets : Array[AMDirectory] = []
 	var nodes := get_tree().get_nodes_in_group("selected_assets_cards")
 	if !nodes.is_empty():
 		for node in nodes:
-			if node.dataset is AMDirectory:
-				datasets.push_back(node.dataset)
+			if node.asset is AMDirectory:
+				assets.push_back(node.asset)
 	else:
 		if dir is AMDirectory:
-			datasets.push_back(dir)
+			assets.push_back(dir)
 		
-	return datasets
+	return assets
 	
 ## Deselects all selected nodes
 func deselect_all() -> void:
