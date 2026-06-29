@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://c8ufdlbswmgqb"]
+[gd_scene load_steps=6 format=3 uid="uid://c8ufdlbswmgqb"]
 
 [ext_resource type="PackedScene" uid="uid://bg1ndjavb6us7" path="res://Browser/TagManager.tscn" id="1_5c48w"]
 [ext_resource type="Script" uid="uid://ctmd6tg4m65nc" path="res://Browser/FileInfo.gd" id="1_tcr7o"]
+[ext_resource type="PackedScene" uid="uid://cuquhrey20oec" path="res://Browser/Authors.tscn" id="2_5hkj5"]
 [ext_resource type="Texture2D" uid="uid://bcoxi7g7564rk" path="res://Assets/Material Icons/save.svg" id="2_tcr7o"]
+[ext_resource type="PackedScene" uid="uid://cqjorcbnqbpxj" path="res://Browser/Licenses.tscn" id="3_bqpnt"]
 
 [node name="FileInfo" type="MarginContainer"]
 anchors_preset = 15
@@ -25,18 +27,42 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 text = "Name"
 
-[node name="Name" type="LineEdit" parent="ScrollContainer/VBoxContainer"]
+[node name="Name" type="LineEdit" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="ScrollContainer/VBoxContainer"]
+[node name="AuthorsLabel" type="Label" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "Authors"
+
+[node name="Authors" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer" instance=ExtResource("2_5hkj5")]
+layout_mode = 2
+
+[node name="LicenseLabel" type="Label" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "Licenses"
+
+[node name="Licenses" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer" instance=ExtResource("3_bqpnt")]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 text = "Tags"
 
-[node name="TagManager" parent="ScrollContainer/VBoxContainer" instance=ExtResource("1_5c48w")]
+[node name="TagManager" parent="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer" instance=ExtResource("1_5c48w")]
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/margin_left = 0
@@ -52,6 +78,8 @@ disabled = true
 text = "Save"
 icon = ExtResource("2_tcr7o")
 
-[connection signal="text_changed" from="ScrollContainer/VBoxContainer/Name" to="." method="_on_name_text_changed"]
-[connection signal="changed" from="ScrollContainer/VBoxContainer/TagManager" to="." method="_on_tag_manager_changed"]
+[connection signal="text_changed" from="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer/Name" to="." method="_on_name_text_changed"]
+[connection signal="changed" from="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer/Authors" to="." method="_on_authors_changed"]
+[connection signal="changed" from="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer/Licenses" to="." method="_on_licenses_changed"]
+[connection signal="changed" from="ScrollContainer/VBoxContainer/ScrollContainer/VBoxContainer/TagManager" to="." method="_on_tag_manager_changed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/Save" to="." method="_on_save_pressed"]

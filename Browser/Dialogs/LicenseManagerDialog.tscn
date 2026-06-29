@@ -1,0 +1,130 @@
+[gd_scene load_steps=4 format=3 uid="uid://cd1s6od40kfho"]
+
+[ext_resource type="Texture2D" uid="uid://cm8s7xs6mlcum" path="res://Assets/Material Icons/add.svg" id="1_uxsy3"]
+[ext_resource type="Script" uid="uid://dkn67m8uhs5c8" path="res://Browser/Dialogs/LicenseManagerDialog.gd" id="1_ycp3l"]
+[ext_resource type="Texture2D" uid="uid://dspvd1yb4pw3v" path="res://Assets/Material Icons/delete.svg" id="3_vfkwn"]
+
+[node name="LicenseManagerDialog" type="Window"]
+oversampling_override = 1.0
+position = Vector2i(0, 36)
+size = Vector2i(600, 400)
+script = ExtResource("1_ycp3l")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="AddLicense" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+icon = ExtResource("1_uxsy3")
+icon_alignment = 1
+expand_icon = true
+
+[node name="RemoveLicense" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(33, 33)
+layout_mode = 2
+disabled = true
+icon = ExtResource("3_vfkwn")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Licenses" type="ItemList" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="LicenseName" type="LineEdit" parent="MarginContainer/HBoxContainer/VBoxContainer/Licenses"]
+visible = false
+layout_mode = 0
+offset_right = 69.5
+offset_bottom = 33.0
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="EditButtons" type="HBoxContainer" parent="MarginContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="Assets" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons"]
+layout_mode = 2
+focus_mode = 0
+disabled = true
+text = "Assets Names"
+
+[node name="Authors" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons"]
+layout_mode = 2
+focus_mode = 0
+disabled = true
+text = "Authors"
+
+[node name="LicenseName" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons"]
+layout_mode = 2
+focus_mode = 0
+disabled = true
+text = "License Name"
+
+[node name="Year" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons"]
+layout_mode = 2
+focus_mode = 0
+disabled = true
+text = "Year"
+
+[node name="LicenseText" type="TextEdit" parent="MarginContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+
+[node name="Save" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+disabled = true
+text = "Save"
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="CanvasLayer"]
+oversampling_override = 1.0
+title = ""
+size = Vector2i(243, 122)
+ok_button_text = "Yes"
+dialog_text = "Are you sure you want to delete the selected license? This can't be undone!"
+dialog_close_on_escape = false
+dialog_autowrap = true
+cancel_button_text = "No"
+
+[connection signal="close_requested" from="." to="." method="_on_close_pressed"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer/AddLicense" to="." method="_on_add_license_pressed"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer/RemoveLicense" to="." method="_on_remove_license_pressed"]
+[connection signal="item_activated" from="MarginContainer/HBoxContainer/VBoxContainer/Licenses" to="." method="_on_licenses_item_activated"]
+[connection signal="item_selected" from="MarginContainer/HBoxContainer/VBoxContainer/Licenses" to="." method="_on_licenses_item_selected"]
+[connection signal="focus_exited" from="MarginContainer/HBoxContainer/VBoxContainer/Licenses/LicenseName" to="." method="_on_license_name_focus_exited"]
+[connection signal="text_submitted" from="MarginContainer/HBoxContainer/VBoxContainer/Licenses/LicenseName" to="." method="_on_license_name_text_submitted"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons/Assets" to="." method="_on_edit_button_pressed" binds= ["{{assets}}"]]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons/Authors" to="." method="_on_edit_button_pressed" binds= ["{{authors}}"]]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons/LicenseName" to="." method="_on_edit_button_pressed" binds= ["{{license_name}}"]]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer2/EditButtons/Year" to="." method="_on_edit_button_pressed" binds= ["{{year}}"]]
+[connection signal="focus_entered" from="MarginContainer/HBoxContainer/VBoxContainer2/LicenseText" to="." method="_on_license_text_focus_entered"]
+[connection signal="focus_exited" from="MarginContainer/HBoxContainer/VBoxContainer2/LicenseText" to="." method="_on_license_text_focus_exited"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer2/Save" to="." method="_on_save_pressed"]
+[connection signal="confirmed" from="CanvasLayer/ConfirmationDialog" to="." method="_on_confirmation_dialog_confirmed"]

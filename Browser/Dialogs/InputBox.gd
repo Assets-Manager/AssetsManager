@@ -23,5 +23,5 @@ func _on_visibility_changed() -> void:
 	if visible:
 		_Text.grab_focus()
 
-func _on_line_edit_text_submitted(new_text: String) -> void:
+func _on_line_edit_text_submitted(_new_text: String) -> void:
 	_on_Ok_pressed()

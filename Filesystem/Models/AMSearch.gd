@@ -9,12 +9,26 @@ var directory_id : int = 0
 ## Tags to search for
 var tags: Array[AMTag] = []
 
-## Returns a tag id list as string
-func get_tag_ids() -> String:
-	var result = ""
-	for tag in tags:
-		if !result.is_empty():
-			result += ","
-		result += str(tag.id)
-	
+## Authors to search for
+var authors: Array[AMAuthor] = []
+
+## Licenses to search for
+var licenses: Array[AMLicense] = []
+
+## Returns a tag id list
+func get_tag_ids() -> Array[int]:
+	var result: Array[int] = []
+	result.append_array(tags.map(func(tag): return tag.id))
+	return result
+
+## Returns a authors id list
+func get_author_ids() -> Array[int]:
+	var result: Array[int] = []
+	result.append_array(authors.map(func(author): return author.id))
+	return result
+
+## Returns a licenses id list
+func get_licenses_ids() -> Array[int]:
+	var result: Array[int] = []
+	result.append_array(licenses.map(func(license): return license.id))
 	return result

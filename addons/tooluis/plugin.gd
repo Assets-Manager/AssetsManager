@@ -3,8 +3,8 @@ extends EditorPlugin
 
 
 func _enter_tree():
-	pass
+	add_custom_type("Autocomplete", "LineEdit", preload("res://addons/tooluis/Scripts/Autocomplete.gd"), null)
 
 
 func _exit_tree():
-	pass
+	remove_custom_type("Autocomplete")

@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://cqjorcbnqbpxj"]
+
+[ext_resource type="Script" uid="uid://djkdyklj000vy" path="res://Browser/Licenses.gd" id="1_jq4fg"]
+[ext_resource type="PackedScene" uid="uid://cr5lcgc3pxhxl" path="res://addons/tooluis/Scenes/Chips.tscn" id="2_cmx2b"]
+
+[node name="Licenses" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 33)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jq4fg")
+
+[node name="Chips" parent="." instance=ExtResource("2_cmx2b")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[connection signal="chip_added" from="Chips" to="." method="_on_chips_chip_added"]
+[connection signal="chip_removed" from="Chips" to="." method="_on_chips_chip_removed"]
+[connection signal="request_options" from="Chips" to="." method="_on_chips_request_options"]

@@ -20,8 +20,8 @@ func create_instance(p_name: String) -> Control:
 	
 	if views.has(p_name):
 		var view : Control = views[p_name].instantiate()
-		_VBox.add_child(view)
 		view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		_VBox.add_child(view)
 		
 		_kill_tween()
 		_CurrentTween = create_tween()

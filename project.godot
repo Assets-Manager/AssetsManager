@@ -13,7 +13,7 @@ config_version=5
 config/name="Assets Manager"
 config/version="1.3.0"
 run/main_scene="res://Startscreen/StartScreen.tscn"
-config/features=PackedStringArray("4.4")
+config/features=PackedStringArray("4.5")
 boot_splash/bg_color=Color(0.0941176, 0.0901961, 0.121569, 1)
 boot_splash/image="res://Banner.png"
 config/icon="res://icon.png"
@@ -27,7 +27,7 @@ BrowserManager="*res://Filesystem/BrowserManager.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godottour/plugin.cfg", "res://addons/tooluis/plugin.cfg", "res://addons/gdUnit4/plugin.cfg")
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg", "res://addons/godot-sqlite/plugin.cfg", "res://addons/godottour/plugin.cfg", "res://addons/tooluis/plugin.cfg")
 
 [gui]
 

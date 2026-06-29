@@ -7,6 +7,7 @@ signal change_dir()
 
 @onready var _Cards := $Browser/ScrollContainer/Panel/Cards
 @onready var _ImporterDialog := $CanvasLayer/ImporterDialog
+@onready var _LicenseManagerDialog := $CanvasLayer/LicenseManagerDialog
 @onready var _DirectoryMoveDialog := $CanvasLayer/DirectoryMoveDialog
 @onready var _Pagination := $Browser/MarginContainer2/HBoxContainer/Pagination
 @onready var _Search := $Browser/MarginContainer/HBoxContainer/Search
@@ -256,10 +257,7 @@ func _card_pressed(data, is_dir : bool) -> void:
 		_show_file_info(data)
 
 func _show_file_info(asset) -> void:
-	if _SidePanel.is_open():
-		_SidePanel.create_instance("FILEINFO").asset = asset
-	else:
-		_SidePanel.show_view("FILEINFO").asset = asset
+	_switch_sidepanel_view("FILEINFO").asset = asset
 
 # Exports an asset
 func _export_assets(assets: Array) -> void:
@@ -268,8 +266,10 @@ func _export_assets(assets: Array) -> void:
 	
 	if (assets.size() > 1) || (assets[0] is AMDirectory):
 		_NativeDialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+		_NativeDialog.current_file = ""
 	else:
 		_NativeDialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		_NativeDialog.current_file = AssetsLibrary.get_asset_real_filename(assets[0])
 	
 	var path : String = ""
 	_NativeDialog.popup_centered()
@@ -279,7 +279,10 @@ func _export_assets(assets: Array) -> void:
 		path = await _NativeDialog.file_selected
 	
 	if !path.is_empty():
-		AssetsLibrary.export_assets(assets, path)
+		if (assets.size() == 1) || (assets[0] is AMAsset):
+			AssetsLibrary.export_asset(assets[0].id, path)
+		else:
+			AssetsLibrary.export_assets(assets, path)
 
 func _delete_card(dirs: Array[AMDirectory]) -> void:
 	_DirectoriesToDelete = dirs
@@ -399,11 +402,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		if deselectAll:
 			BrowserManager.deselect_all()
 
-func _on_tag_manager_pressed() -> void:
-	_SidePanel.show_view("TAG_MANAGER")
-
 func _on_side_panel_closed() -> void:
 	BrowserManager.tagging_mode = false
 
-func _on_advanced_filter_pressed() -> void:
-	_SidePanel.show_view("ADVANCED_SEARCH")
+func _switch_sidepanel_view(view_name: String) -> Control:
+	if _SidePanel.is_open():
+		return _SidePanel.create_instance(view_name)
+	return _SidePanel.show_view(view_name)
+
+func _on_license_manager_pressed() -> void:
+	_LicenseManagerDialog.popup_centered()

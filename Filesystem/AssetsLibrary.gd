@@ -20,6 +20,7 @@ var _FileQueue : Array = []
 var _TotalFilecount : int = 0
 var _QuitThread : bool = false
 var _Importers : Dictionary[int, IFormatImporter] = {}
+var _Licenses : Dictionary[int, Array] = {}
 var _AssetsDatabase: AssetsDatabase = AssetsDatabase.new()
 var _HasFocus : bool = true
 
@@ -218,6 +219,7 @@ func export_assets(export_list: Array, path : String) -> void:
 		elif entry is AMAsset:
 			_export_asset(entry.id, path if export_list.size() == 1 else path.get_base_dir(), entry.filename if export_list.size() == 1 else path.get_file())
 	
+	_write_licenses(path if export_list.size() == 1 else path.get_base_dir())
 	_ExportedFilesCounter = {}
 	_DirWatcher.paused = false
 
@@ -225,8 +227,32 @@ func export_assets(export_list: Array, path : String) -> void:
 func export_asset(asset_id: int, filename : String) -> void:
 	_DirWatcher.paused = true # To prevent the watcher to track every read event.
 	_export_asset(asset_id, filename.get_base_dir(), filename.get_file())
+	_write_licenses(filename.get_base_dir())
 	_ExportedFilesCounter = {}
 	_DirWatcher.paused = false
+
+func _write_licenses(path: String) -> void:
+	var file : FileAccess = FileAccess.open(path.path_join("Assets licenses.txt"), FileAccess.WRITE)
+	for k in _Licenses:
+		var qresult =_AssetsDatabase.query_with_bindings_with_qresult("SELECT name, text FROM licenses WHERE id = ?", [k])
+		if !qresult.is_empty():
+			var mustach = Mustache.new()
+			mustach.template = qresult[0]["text"]
+			var assets : Array = _Licenses[k]
+			
+			var query := QueryBuilder.new("authors", "au").select(["au.name"]) \
+			.left_join("authors_assets_rel", "asr").in_expr("asr.ref_assets_id", assets.map(func(asset: AMAsset): return asset.id)).build() \
+			.where().bin_op_expr("au.id", "=", "asr.ref_authors_id").build()
+			
+			var qresults = _AssetsDatabase.query_with_bindings_with_qresult(query.build(), [])
+			file.store_line(mustach.generate({
+				"assets": assets.map(func(asset: AMAsset): return asset.filename.get_basename()).reduce(func(accum, value): return "%s, %s" % [accum, value]),
+				"authors": qresults.map(func(value): return value["name"]).reduce(func(accum, value): return "%s, %s" % [accum, value]),
+				"license_name": qresult[0]["name"],
+				"year": Time.get_datetime_dict_from_system()["year"]
+			}))
+	
+	_Licenses = {}
 
 ## Exports a directory
 func _export_dir(dir : AMDirectory, path: String) -> void:
@@ -282,6 +308,14 @@ func _export_asset(asset_id: int, path : String, name_hint: String) -> void:
 			path = path.get_basename() + " (" + str(_ExportedFilesCounter[path]) + ")." + path.get_extension()
 		else:
 			_ExportedFilesCounter[path] = 0
+		
+		var qresult = _AssetsDatabase.query_with_bindings_with_qresult("SELECT ref_license_id FROM asset_license_rel WHERE ref_assets_id = ?", [asset.id])
+		if !qresult.is_empty():
+			for license in qresult:
+				if _Licenses.has(int(license["ref_license_id"])):
+					_Licenses[int(license["ref_license_id"])].push_back(asset)
+				else:
+					_Licenses[int(license["ref_license_id"])] = [asset]
 		
 		DirAccess.copy_absolute(generate_and_migrate_assets_path(asset.filename, asset_id), path)
 		if asset.filename.get_extension() == "obj":
@@ -396,25 +430,80 @@ func _get_directory_id(parentId : int, p_name : String) -> int:
 
 #region Assets
 
-## Builds the search query for directories
-## Returns a dictionary {"bindings": Array, "query": String, "join": String}
-func _build_directory_query(search : AMSearch) -> Dictionary:
-	var bindings: Array = []
-	var query: String = "%s"
-	var join: String = ""
-	var recursive: String = ""
-	if !search.search_term.is_empty():
-		query = "%sd.name LIKE ?"
+var DIRECTORY_CALLABLES: Dictionary[String, Callable] = {
+	"tag_join": _tag_join_directory,
+	"name_search": func(query: QueryBuilder): query.where().like_expr("d.name"),
+	"licenses_join": func(query: QueryBuilder, _author_id_list: Array[int]): query.where().and_expr().bin_op_expr("d.id", "=", "0"),
+	"authors_join": func(query: QueryBuilder, _author_id_list: Array[int]): query.where().and_expr().bin_op_expr("d.id", "=", "0"),
+	"ls": func(query: QueryBuilder): query.where().and_expr().bin_op_expr("d.parent_id", "="),
+	"ls_tree": func(query: QueryBuilder): query.where().and_expr().in_expr("d.parent_id", ["SELECT id FROM dirs"]),
+	"global_ls": func(query: QueryBuilder): query.where().and_expr().bin_op_expr("d.parent_id", "IS", "NULL")
+}
+
+var ASSETS_CALLABLES: Dictionary[String, Callable] = {
+	"tag_join": _tag_join_assets,
+	"authors_join": _authors_join_assets,
+	"licenses_join": _licenses_join_assets,
+	"name_search": func(query: QueryBuilder): query.where().like_expr("a.filename"),
+	"ls": func(query: QueryBuilder): _assets_ls(false, query),
+	"ls_tree": func(query: QueryBuilder): _assets_ls(true, query),
+	"pre_global_ls": func(query: QueryBuilder): query.left_join("asset_directory_rel", "ad") \
+		.bin_op_expr("ad.ref_assets_id", "=", "a.id").build(),
+	"global_ls": func(query: QueryBuilder): query.where().and_expr().bin_op_expr("ad.ref_directory_id", "IS", "NULL")
+}
+
+func _tag_join_assets(query: QueryBuilder, tag_id_list: Array[int]) -> void:
+	query.left_join("tag_asset_rel", "ta") \
+		.in_expr("ta.ref_tag_id", tag_id_list).build() \
+		.where().bin_op_expr("a.id", "=", "ta.ref_assets_id")
+
+func _tag_join_directory(query: QueryBuilder, tag_id_list: Array[int]) -> void:
+	query.left_join("tag_directory_rel", "td") \
+		.in_expr("td.ref_tag_id", tag_id_list).build() \
+		.where().bin_op_expr("d.id", "=", "td.ref_directory_id")
 		
-	# Adds a join condition, to include only directories, which had the given tags assigned
-	var tag_id_list = search.get_tag_ids()
+func _authors_join_assets(query: QueryBuilder, author_id_list: Array[int]) -> void:
+	query.left_join("authors_assets_rel", "aar") \
+	.in_expr("aar.ref_authors_id", author_id_list).build() \
+	.where().and_expr().bin_op_expr("a.id", "=", "aar.ref_assets_id")
+		
+func _licenses_join_assets(query: QueryBuilder, licenses_id_list: Array[int]) -> void:
+	query.left_join("asset_license_rel", "alr") \
+	.in_expr("alr.ref_license_id", licenses_id_list).build() \
+	.where().and_expr().bin_op_expr("a.id", "=", "alr.ref_assets_id")
+		
+func _assets_ls(is_in: bool, query: QueryBuilder) -> void:
+	var join := query.left_join("asset_directory_rel", "ad")
+	if !is_in:
+		join.bin_op_expr("ad.ref_directory_id", "=")
+	else:
+		join.in_expr("ad.ref_directory_id", ["SELECT id FROM dirs"])
+	
+	# Returns all assets which are somewhere in the folder tree
+	join.build() \
+	.where() \
+	.and_expr() \
+	.bin_op_expr("a.id", "=", "ad.ref_assets_id")
+
+func _build_query(search: AMSearch, query: QueryBuilder, callbacks: Dictionary[String, Callable], bindings: Array) -> String:
+	var recursive = ""
+	
+	# Adds a join condition, to include only assets, which had the given tags assigned
+	var tag_id_list := search.get_tag_ids()
 	if !tag_id_list.is_empty():
-		join = "LEFT JOIN tag_directory_rel as td ON(td.ref_tag_id IN (%s))" % tag_id_list
-		query = query % ("d.id = td.ref_directory_id" + (" AND %s" if search.directory_id != 0 || !search.search_term.is_empty() else " %s"))
+		callbacks["tag_join"].call(query, tag_id_list)
+	
+	var author_id_list := search.get_author_ids()
+	if !author_id_list.is_empty():
+		callbacks["authors_join"].call(query, author_id_list)
+		
+	var licenses_id_list := search.get_licenses_ids()
+	if !licenses_id_list.is_empty():
+		callbacks["licenses_join"].call(query, licenses_id_list)
 	
 	if search.directory_id != 0:
 		if search.search_term.is_empty() && tag_id_list.is_empty():
-			query = query % ("d.parent_id = ?" + (" AND " if !search.search_term.is_empty() else ""))
+			callbacks["ls"].call(query)
 			bindings.push_back(search.directory_id)
 		else:
 			# A recursive sql call to create a list of all subdirs for the search
@@ -428,85 +517,45 @@ func _build_directory_query(search : AMSearch) -> Dictionary:
 				)
 				""" % search.directory_id
 			
-			query = query % ("d.parent_id IN (SELECT id FROM dirs)" + (" AND " if !search.search_term.is_empty() else ""))
+			callbacks["ls_tree"].call(query)
 	else:
 		# The root directory allows for a global search
-		if search.search_term.is_empty() && tag_id_list.is_empty():
-			query = query % ("d.parent_id IS NULL" + (" AND " if !search.search_term.is_empty() else ""))
-		else:
-			query = query % ""
-			
-	if !search.search_term.is_empty():
-		bindings.push_back("%" + search.search_term + "%")
-	
-	return {"bindings": bindings, "query": query, "join": join, "recursive": recursive}
-	
-## Builds the search query for assets
-## Returns a dictionary {"bindings": Array, "query": String, "join": String, "recursive": String}
-func _build_asset_query(search : AMSearch) -> Dictionary:
-	var bindings: Array = []
-	var query: String = "%s"
-	var join: String = ""
-	var recursive = ""
-	
-	if !search.search_term.is_empty():
-		query = "%sa.filename LIKE ?"
+		if callbacks.has("pre_global_ls"):
+			callbacks["pre_global_ls"].call(query)
 		
-	# Adds a join condition, to include only assets, which had the given tags assigned
-	var tag_id_list = search.get_tag_ids()
-	if !tag_id_list.is_empty():
-		join = "LEFT JOIN tag_asset_rel as ta ON(ta.ref_tag_id IN (%s)) " % tag_id_list
-		query = query % ("a.id = ta.ref_assets_id" + (" AND %s" if search.directory_id != 0 || !search.search_term.is_empty() else " %s"))
-	
-	if search.directory_id != 0:
 		if search.search_term.is_empty() && tag_id_list.is_empty():
-			join += "LEFT JOIN asset_directory_rel as ad ON(ad.ref_directory_id = ?) "
-			bindings.push_back(search.directory_id)
-		else:
-			# A recursive sql call to create a list of all subdirs for the search
-			recursive = """
-				WITH RECURSIVE dirs AS (
-					SELECT id, parent_id FROM directories
-					WHERE id = %d
-					UNION
-					SELECT d.id, d.parent_id FROM directories as d 
-					JOIN dirs ON d.parent_id = dirs.id
-				)
-				""" % search.directory_id
-			
-			join += "LEFT JOIN asset_directory_rel as ad ON(ad.ref_directory_id IN (SELECT id FROM dirs)) "
-		query = query % ("a.id = ad.ref_assets_id" + (" AND " if !search.search_term.is_empty() else ""))
-	else:
-		join += "LEFT JOIN asset_directory_rel as ad ON(ad.ref_assets_id = a.id)"
+			callbacks["global_ls"].call(query)
 		
-		# The root directory allows for a global search
-		if search.search_term.is_empty() && tag_id_list.is_empty():
-			query = query % ("ad.ref_directory_id IS NULL" + (" AND " if !search.search_term.is_empty() else ""))
-		else:
-			query = query % ""
-	
+	# Name search at last, for better performance
 	if !search.search_term.is_empty():
+		query.where().and_expr()
+		callbacks["name_search"].call(query)
 		bindings.push_back("%" + search.search_term + "%")
-	
-	return {"bindings": bindings, "query": query, "join": join, "recursive": recursive}
+		
+	return recursive
+
 
 ## Returns the total count of items (including dirs and assets), for a search
 func get_assets_count(search: AMSearch) -> int:
 	var count : int = 0
+	var bindings: Array = []
 	
-	var dquery := _build_directory_query(search)
-	var aquery := _build_asset_query(search)
+	var dquery = QueryBuilder.new("directories", "d")
+	var recursive = _build_query(search, dquery.select("COUNT(*) AS count"), DIRECTORY_CALLABLES, bindings)
+	
+	var aquery = QueryBuilder.new("assets", "a")
+	_build_query(search, aquery.select("COUNT(*) AS count"), ASSETS_CALLABLES, bindings)
 	
 	# We create a union of two different queries, where one counts the number of total dirs
 	# for the given search and one the total count of assets. The result is sumed up.
 	var qresult := _AssetsDatabase.query_with_bindings_with_qresult("""
 		%s
 		SELECT SUM(count) as total_count FROM (
-			SELECT COUNT(*) as count FROM directories as d %s WHERE %s
+			%s
 			UNION
-			SELECT COUNT(*)  as count FROM assets as a %s WHERE %s
+			%s
 		)
-	""" % [aquery.recursive, dquery.join, dquery.query, aquery.join, aquery.query], dquery.bindings + aquery.bindings)
+	""" % [recursive, dquery.build(), aquery.build()], bindings)
 	if !qresult.is_empty():
 		count = qresult[0].total_count
 		
@@ -515,17 +564,21 @@ func get_assets_count(search: AMSearch) -> int:
 ## Returns a list which contains AMDirectory and AMAsset objects
 func query_assets(search: AMSearch, skip: int, count: int) -> Array:
 	var result : Array = []
+	var bindings: Array = []
 	
-	var dquery := _build_directory_query(search)
-	var aquery := _build_asset_query(search)
+	var dquery = QueryBuilder.new("directories", "d")
+	var recursive = _build_query(search, dquery.select(["id", "name", "NULL as last_modified", "NULL as type", "NULL as thumbnail", "parent_id"]), DIRECTORY_CALLABLES, bindings)
+	
+	var aquery = QueryBuilder.new("assets", "a")
+	_build_query(search, aquery.select(["id", "filename", "last_modified", "type", "thumbnail", "%s as parent_id" % ("NULL" if (search.directory_id == 0 && search.search_term.is_empty()) else "ad.ref_directory_id")]), ASSETS_CALLABLES, bindings)
 	
 	var qresults := _AssetsDatabase.query_with_bindings_with_qresult("""
 		%s
-		SELECT id, name, NULL as last_modified, NULL as type, NULL as thumbnail, parent_id FROM directories as d %s WHERE %s
+		%s
 		UNION
-		SELECT id, filename, last_modified, type, thumbnail, %s as parent_id FROM assets as a %s WHERE %s
+		%s
 		LIMIT ?, ?
-	""" % [aquery.recursive, dquery.join, dquery.query, "NULL" if (search.directory_id == 0 && search.search_term.is_empty()) else "ad.ref_directory_id", aquery.join, aquery.query], dquery.bindings + aquery.bindings + [skip, count])
+	""" % [recursive, dquery.build(), aquery.build()], bindings + [skip, count])
 	
 	for qresult in qresults:
 		if qresult.has("type") && qresult.type:
@@ -566,7 +619,6 @@ func update_asset(id : int, path: String, thumbnailName: String, type: int) -> A
 	if asset.thumbnail: # Delete the old thumbnail
 		DirAccess.remove_absolute(get_thumbnail_path().path_join(asset.thumbnail))
 	
-	var result : bool = false
 	var modified : int = FileAccess.get_modified_time(path)
 	var decoded_file = decode_asset_name(path)
 	
@@ -676,6 +728,11 @@ func is_asset_in_dir(asset_id : int, directory_id : int) -> bool:
 ## Returns a list of directories, where the given asset is linked with.
 func get_asset_linked_dirs(asset_id : int) -> Array:
 	return _AssetsDatabase.query_with_bindings_with_qresult("SELECT d.id, d.name FROM directories as d LEFT JOIN asset_directory_rel as ad ON(ad.ref_assets_id = ?) WHERE d.id = ad.ref_directory_id", [asset_id])
+
+## Returns the filename with extension
+func get_asset_real_filename(asset: AMAsset) -> String:
+	asset = _get_asset_by_id(asset.id)
+	return asset.filename
 
 func _get_asset_by_id(asset_id : int) -> AMAsset:
 	var result : AMAsset = null
@@ -846,6 +903,81 @@ func _move_query(dir_list: String, update_asset_list: String, insert_asset_list:
 
 #endregion
 
+#region License
+
+## Adds a license to the library.
+## [br][br]
+## [b]Return:[/b] Returns the license with the new database id or null on error.
+func add_license(license : AMLicense) -> AMLicense:
+	if _AssetsDatabase.insert("licenses", {"name": license.name, "text": license.text if !license.text.is_empty() else null}):
+		license.id = _AssetsDatabase.get_last_insert_rowid()
+	else:
+		license = null
+		
+	return license
+
+## Updates a license
+## [br][br]
+## [b]Return:[/b] Returns true on success
+func update_license(license : AMLicense) -> bool:
+	return _AssetsDatabase.update("licenses", "id=%d" % license.id, {"name": license.name, "text": license.text if !license.text.is_empty() else null})
+
+## Deletes a license
+## [br][br]
+## [b]Return:[/b] Returns true on success
+func delete_license(license : AMLicense) -> bool:
+	return _AssetsDatabase.delete("licenses", "id=%d" % license.id)
+
+## Gets a list of all licenses
+func get_all_licenses() -> Array[AMLicense]:
+	var result : Array[AMLicense] = []
+	var qresults := _AssetsDatabase.query_with_bindings_with_qresult("SELECT * FROM licenses ORDER BY name", [])
+	for qresult in qresults:
+		result.append(_fill_model(AMLicense.new(), qresult))
+	
+	return result
+
+## Adds a licenses to an asset
+func add_licenses_to_asset(asset: AMAsset, licenses: Array[AMLicense]) -> bool:
+	var query := QueryBuilder.new("asset_license_rel").insert(["ref_assets_id", "ref_license_id"], true)
+	for license in licenses:
+		query.add_value([str(asset.id), str(license.id)])
+	
+	return _AssetsDatabase.query_with_bindings(query.build(), [])
+
+## Removes a licenses to an asset
+func remove_licenses_from_asset(asset: AMAsset, licenses: Array[AMLicense]) -> bool:
+	var query := QueryBuilder.new("asset_license_rel").delete()
+	query.where().bin_op_expr("ref_assets_id", "=", asset.id).and_expr()
+	var ids = []
+	for license in licenses:
+		ids.push_back(license.id)
+	
+	query.where().in_expr("ref_license_id", ids)
+	return _AssetsDatabase.query_with_bindings(query.build(), [])
+
+## Returns a list of licenses for a given asset.
+func get_asset_licenses(asset: AMAsset) -> Array[AMLicense]:
+	var result : Array[AMLicense] = []
+	var qresults := _AssetsDatabase.query_with_bindings_with_qresult("SELECT * FROM licenses as l LEFT JOIN asset_license_rel as al ON (al.ref_assets_id = ?) WHERE l.id = al.ref_license_id", [asset.id])
+	for qresult in qresults:
+		result.append(_fill_model(AMLicense.new(), qresult))
+	
+	return result
+
+## Searches licenses by name.
+func search_licenses(name: String) -> Array[AMLicense]:
+	var result: Array[AMLicense] = []
+	
+	var licenses_query: String = QueryBuilder.new("licenses").select("*").where().like_expr("name", "%" + name + "%").build().build()
+	var qresults = _AssetsDatabase.query_with_bindings_with_qresult(licenses_query, [])
+	for qresult in qresults:
+		result.push_back(_fill_model(AMLicense.new(), qresult))
+	
+	return result
+
+#endregion
+
 #region Tags
 
 ## Gets a list of all tags
@@ -1007,6 +1139,59 @@ func _collect_tag_data(assets: Array, recursive: bool) -> Dictionary[String, Str
 		"""
 		
 	return {"assets_select": assets_select, "dir_select": dir_select, "recursive_query": recursive_query}
+
+#endregion
+
+#region Author
+
+func add_author(name: String) -> AMAuthor:
+	var result : AMAuthor = null
+	if _AssetsDatabase.insert("authors", {"name": name}):
+		result = AMAuthor.new()
+		result.id = _AssetsDatabase.get_last_insert_rowid()
+		result.name = name
+		
+	return result
+	
+func get_authors(asset: AMAsset) -> Array[AMAuthor]:
+	var result: Array[AMAuthor] = []
+	var query := QueryBuilder.new("authors", "au").select(["au.id", "au.name"]) \
+	.left_join("authors_assets_rel", "asr").bin_op_expr("asr.ref_assets_id", "=", asset.id).build() \
+	.where().bin_op_expr("au.id", "=", "asr.ref_authors_id").build()
+	
+	var qresults = _AssetsDatabase.query_with_bindings_with_qresult(query.build(), [])
+	for qresult in qresults:
+		result.push_back(_fill_model(AMAuthor.new(), qresult))
+	
+	return result
+	
+func add_authors_to_asset(asset: AMAsset, authors: Array[AMAuthor]) -> bool:
+	var query := QueryBuilder.new("authors_assets_rel").insert(["ref_assets_id", "ref_authors_id"], true)
+	for author in authors:
+		query.add_value([str(asset.id), str(author.id)])
+	
+	return _AssetsDatabase.query_with_bindings(query.build(), [])
+
+func remove_authors_from_asset(asset: AMAsset, authors: Array[AMAuthor]) -> bool:
+	var query := QueryBuilder.new("authors_assets_rel").delete()
+	query.where().bin_op_expr("ref_assets_id", "=", asset.id).and_expr()
+	var ids = []
+	for author in authors:
+		ids.push_back(author.id)
+	
+	query.where().in_expr("ref_authors_id", ids)
+	return _AssetsDatabase.query_with_bindings(query.build(), [])
+
+## Searches authors by name.
+func search_authors(name: String) -> Array[AMAuthor]:
+	var result: Array[AMAuthor] = []
+	
+	var authors_query: String = QueryBuilder.new("authors").select("*").where().like_expr("name", "%" + name + "%").build().build()
+	var qresults = _AssetsDatabase.query_with_bindings_with_qresult(authors_query, [])
+	for qresult in qresults:
+		result.push_back(_fill_model(AMAuthor.new(), qresult))
+	
+	return result
 
 #endregion
 

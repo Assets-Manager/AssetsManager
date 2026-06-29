@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://7vslpl2u2cmn"]
+[gd_scene load_steps=4 format=3 uid="uid://7vslpl2u2cmn"]
 
 [ext_resource type="Script" uid="uid://b8wliuhsvxfkd" path="res://Browser/AdvancedSearch.gd" id="1_mtc63"]
+[ext_resource type="PackedScene" uid="uid://cuquhrey20oec" path="res://Browser/Authors.tscn" id="2_ao4b1"]
+[ext_resource type="PackedScene" uid="uid://cqjorcbnqbpxj" path="res://Browser/Licenses.tscn" id="3_hxguy"]
 
 [node name="AdvancedSearch" type="MarginContainer"]
 anchors_preset = 15
@@ -17,6 +19,25 @@ script = ExtResource("1_mtc63")
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
 
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Authors"
+
+[node name="Authors" parent="VBoxContainer" instance=ExtResource("2_ao4b1")]
+layout_mode = 2
+readonly = true
+
+[node name="Label3" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Licenses"
+
+[node name="Licenses" parent="VBoxContainer" instance=ExtResource("3_hxguy")]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Tags"
+
 [node name="ItemList" type="ItemList" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -26,5 +47,7 @@ select_mode = 2
 layout_mode = 2
 text = "Clear"
 
+[connection signal="changed" from="VBoxContainer/Authors" to="." method="_on_authors_changed"]
+[connection signal="changed" from="VBoxContainer/Licenses" to="." method="_on_licenses_changed"]
 [connection signal="multi_selected" from="VBoxContainer/ItemList" to="." method="_on_item_list_multi_selected"]
 [connection signal="pressed" from="VBoxContainer/Clear" to="." method="_on_clear_pressed"]
