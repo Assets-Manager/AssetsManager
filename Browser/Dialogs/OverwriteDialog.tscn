@@ -1,10 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://butw3mql7nhbd"]
+[gd_scene load_steps=2 format=3 uid="uid://butw3mql7nhbd"]
 
 [ext_resource type="Script" uid="uid://jwwujif37e7i" path="res://Browser/Dialogs/OverwriteDialog.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://ce5yjutkti46n" path="res://Browser/Dialogs/AssetInfoCard.tscn" id="2"]
 
 [node name="OverwriteDialog" type="Window"]
-size = Vector2i(400, 300)
+oversampling_override = 1.0
+size = Vector2i(600, 400)
 exclusive = true
 script = ExtResource("1")
 
@@ -20,56 +20,73 @@ theme_override_constants/margin_bottom = 16
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "New asset"
+size_flags_vertical = 3
 
-[node name="AssetInfoCard" parent="MarginContainer/VBoxContainer" instance=ExtResource("2")]
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
-selectable = false
+size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "Search"
+
+[node name="Search" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="NewAssets" type="ItemList" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+fixed_icon_size = Vector2i(64, 64)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 text = "Existing assets"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+[node name="ExistingAssets" type="ItemList" parent="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+fixed_icon_size = Vector2i(64, 64)
 
-[node name="Cards" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Overwrite" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="Overwrite" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Overwrites the selected asset."
 disabled = true
 text = "Overwrite"
 
-[node name="New" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="New" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Creates a new asset in the database, regardless if it already exists."
+disabled = true
 text = "New"
 
-[node name="Link" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="Link" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Links the selected asset with this folder."
 disabled = true
 text = "Link"
 
-[node name="Cancel" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="Cancel" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancel"
 
-[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Overwrite" to="." method="_on_Overwrite_pressed"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/New" to="." method="_on_New_pressed"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Link" to="." method="_on_Link_pressed"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Cancel" to="." method="_on_Cancel_pressed"]
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="text_changed" from="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer2/Search" to="." method="_on_search_text_changed"]
+[connection signal="item_selected" from="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer2/NewAssets" to="." method="_on_new_assets_item_selected"]
+[connection signal="item_selected" from="MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/ExistingAssets" to="." method="_on_existing_assets_item_selected"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/Overwrite" to="." method="_on_Overwrite_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/New" to="." method="_on_New_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/Link" to="." method="_on_Link_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer2/Cancel" to="." method="_on_Cancel_pressed"]

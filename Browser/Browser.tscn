@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3 uid="uid://c5wq0ri5bodkn"]
+[gd_scene load_steps=42 format=3 uid="uid://c5wq0ri5bodkn"]
 
 [ext_resource type="PackedScene" uid="uid://o8fiejmiwke3" path="res://Browser/Dialogs/ImporterDialog.tscn" id="1"]
 [ext_resource type="Script" uid="uid://7m4prb8mx2w5" path="res://Browser/CenterContainer.gd" id="2"]
@@ -25,6 +25,7 @@
 [ext_resource type="Texture2D" uid="uid://b6l4e3r3uyext" path="res://Assets/Material Icons/create_new_folder.svg" id="15"]
 [ext_resource type="PackedScene" uid="uid://c8ufdlbswmgqb" path="res://Browser/FileInfo.tscn" id="15_rw61a"]
 [ext_resource type="Script" uid="uid://bvesl2jtdvn0w" path="res://addons/godottour/GodotTour.gd" id="16"]
+[ext_resource type="PackedScene" uid="uid://dffjs86xwd4os" path="res://Browser/music_player.tscn" id="16_ljkvh"]
 [ext_resource type="Script" uid="uid://b87d1fb76imw" path="res://addons/godottour/TourStep.gd" id="17"]
 [ext_resource type="PackedScene" uid="uid://butw3mql7nhbd" path="res://Browser/Dialogs/OverwriteDialog.tscn" id="18"]
 [ext_resource type="PackedScene" uid="uid://cd1s6od40kfho" path="res://Browser/Dialogs/LicenseManagerDialog.tscn" id="18_ogv6l"]
@@ -122,6 +123,7 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="ProjectManager" type="Button" parent="Browser/MarginContainer/HBoxContainer"]
+visible = false
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Project manager"
@@ -130,6 +132,7 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="OptionButton" type="OptionButton" parent="Browser/MarginContainer/HBoxContainer"]
+visible = false
 layout_mode = 2
 tooltip_text = "Switch project view"
 selected = 0
@@ -254,6 +257,11 @@ expand_icon = true
 [node name="Pagination" parent="Browser/MarginContainer2/HBoxContainer" instance=ExtResource("4")]
 layout_mode = 2
 
+[node name="MusicPlayer" parent="Browser" instance=ExtResource("16_ljkvh")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 1
+
 [node name="SidePanel" parent="." instance=ExtResource("11_cr5nk")]
 layout_mode = 2
 views = Dictionary[String, PackedScene]({
@@ -275,6 +283,7 @@ visible = false
 
 [node name="OverwriteDialog" parent="CanvasLayer" instance=ExtResource("18")]
 visible = false
+force_native = true
 
 [node name="DirectoryMoveDialog" parent="CanvasLayer" instance=ExtResource("10")]
 position = Vector2i(0, 36)

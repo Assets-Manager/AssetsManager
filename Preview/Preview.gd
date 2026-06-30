@@ -46,7 +46,6 @@ func _generate_sync(path: String) -> void:
 	#RenderingServer.request_frame_drawn_callback(_preview_done)
 	await RenderingServer.frame_post_draw
 	_PreviewImage = get_texture().get_image()
-	_PreviewImage.convert(Image.FORMAT_RGBA8)
 	tmp.queue_free()
 	
 	_PreviewDone = true

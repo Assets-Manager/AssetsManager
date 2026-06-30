@@ -1,0 +1,53 @@
+[gd_scene load_steps=3 format=3 uid="uid://dffjs86xwd4os"]
+
+[ext_resource type="Script" uid="uid://bxeis2mltm3l6" path="res://Browser/music_player.gd" id="1_goxgl"]
+[ext_resource type="Texture2D" uid="uid://du2eyyu4ervd" path="res://Assets/Material Icons/play_pause.svg" id="1_j25bt"]
+
+[node name="MusicPlayer" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -527.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+script = ExtResource("1_goxgl")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Playbar" type="HSlider" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="CurrentTime" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "00:00"
+
+[node name="Control" type="Control" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TotalTime" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "00:00"
+
+[node name="CenterContainer" type="CenterContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Play" type="Button" parent="VBoxContainer/CenterContainer"]
+layout_mode = 2
+icon = ExtResource("1_j25bt")
+
+[node name="MusicPlayer" type="AudioStreamPlayer2D" parent="."]
+
+[connection signal="drag_ended" from="VBoxContainer/Playbar" to="." method="_on_playbar_drag_ended"]
+[connection signal="drag_started" from="VBoxContainer/Playbar" to="." method="_on_playbar_drag_started"]
+[connection signal="pressed" from="VBoxContainer/CenterContainer/Play" to="." method="_on_play_pressed"]

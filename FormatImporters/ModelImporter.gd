@@ -1,12 +1,12 @@
 extends IFormatImporter
 
 const PREVIEW = preload("res://Preview/Preview.tscn")
-var _Preview
+#var _Preview
 
 func register(library : Node, type_id : int) -> void:
 	super.register(library, type_id)
-	_Preview = PREVIEW.instantiate()
-	_Library.add_child(_Preview)
+	#_Preview = PREVIEW.instantiate()
+	#_Library.add_child(_Preview)
 
 # Returns the name of the type e.g.: Image
 static func get_type() -> String:
@@ -29,4 +29,9 @@ func move_asset(from: String, to: String) -> bool:
 	return false
 	
 func render_thumbnail(path: String) -> Texture2D:
-	return _Preview.generate(path)
+	var preview = PREVIEW.instantiate()
+	_Library.add_child.call_deferred(preview)
+	
+	var thumbnail = preview.generate(path)
+	preview.queue_free.call_deferred()
+	return thumbnail

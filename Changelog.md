@@ -1,3 +1,11 @@
+# Version 1.4.0 - 30.06.2026 | 06/30/2026
+
+* Added license manager
+* Added authors for assets
+* Added Audio player
+* Overwrite dialog overhaul
+* Bugfixes
+
 # Version 1.2.0 - 19.08.2025 | 08/19/2025
 
 * Added bulk operations like, move, export, linking, unlinking

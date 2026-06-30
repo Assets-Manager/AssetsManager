@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://d0bsc2605g187" path="res://Browser/Dialogs/ImporterDialog.gd" id="1"]
 
 [node name="ImporterDialog" type="Window"]
+oversampling_override = 1.0
 size = Vector2i(302, 100)
 exclusive = true
 script = ExtResource("1")

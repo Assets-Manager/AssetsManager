@@ -9,6 +9,8 @@ signal search_changed()
 signal need_ui_refresh()
 signal show_file_info_signal(asset)
 
+signal play_audio_file(asset: AMAsset)
+
 var search : AMSearch
 var tagging_mode: bool = false : set = _set_tagging_mode
 
@@ -35,6 +37,9 @@ func refresh_ui() -> void:
 
 func show_file_info(asset) -> void:
 	emit_signal("show_file_info_signal", asset)
+
+func show_and_play_audio(asset: AMAsset) -> void:
+	emit_signal("play_audio_file", asset)
 
 func emit_card_selection_changed() -> void:
 	emit_signal("card_selection_changed")

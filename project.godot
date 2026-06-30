@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Assets Manager"
-config/version="1.3.0"
+config/version="1.4.0"
 run/main_scene="res://Startscreen/StartScreen.tscn"
 config/features=PackedStringArray("4.5")
 boot_splash/bg_color=Color(0.0941176, 0.0901961, 0.121569, 1)

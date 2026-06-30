@@ -22,6 +22,7 @@ signal change_dir()
 @onready var _OverwriteDialog := $CanvasLayer/OverwriteDialog
 @onready var _AssetLinksDialog := $CanvasLayer/AssetLinksDialog
 @onready var _SidePanel := $SidePanel
+@onready var _MusicPlayer := $Browser/MusicPlayer
 
 @onready var _AdvancedFilter := $Browser/MarginContainer/HBoxContainer/AdvancedFilter
 @onready var _CloseLib := $Browser/MarginContainer2/HBoxContainer/CloseLib
@@ -30,9 +31,6 @@ signal change_dir()
 var _DirectoriesToDelete : Array[AMDirectory] = []
 var _VisibleCards : int = 0
 var _FilesToApprove : Array[AMImportFile] = []
-
-var _Thumbnail : Texture2D = null
-var _ThumbnailThread : Thread = null
 
 func _ready() -> void:
 	# Connects all events of the library.
@@ -49,6 +47,7 @@ func _ready() -> void:
 	
 	BrowserManager.enter_tagging_mode.connect(_enter_tagging_mode)
 	BrowserManager.leave_tagging_mode.connect(_leave_tagging_mode)
+	BrowserManager.play_audio_file.connect(_play_audio_file)
 	
 	BrowserManager.reset_search()
 	
@@ -56,6 +55,10 @@ func _ready() -> void:
 	_search_changed()
 	
 	call_deferred("_start_tour")
+	
+	#var loader = GDAssimpLoader.new()
+	#var scene := loader.load("/home/christian/Videos/Test Assets/character-girl.obj")
+	#ResourceSaver.save(scene, "test.tscn")
 	
 func _enter_tagging_mode() -> void:
 	_Pagination.disable_navigation(true)
@@ -76,6 +79,9 @@ func _leave_tagging_mode() -> void:
 	_BackButton.disabled = AssetsLibrary.current_directory == 0
 	_HomeButton.disabled = _BackButton.disabled
 	
+func _play_audio_file(asset: AMAsset) -> void:
+	_MusicPlayer.set_audio_asset(asset)
+	
 func _search_changed() -> void:
 	_Pagination.total_pages = ceil(AssetsLibrary.get_assets_count(BrowserManager.search) / float(ITEMS_PER_PAGE))
 	
@@ -91,32 +97,12 @@ func _start_tour() -> void:
 # 			   UI import update
 # ---------------------------------------------
 
-func _process(_delta):
-	# Is a render thread running?
-	# If so than wait for it to finish.
-	if _ThumbnailThread && !_ThumbnailThread.is_alive():
-		_Thumbnail = _ThumbnailThread.wait_to_finish()
-		_ThumbnailThread = null
-	elif !_ThumbnailThread && !_ImporterDialog.visible && !_FilesToApprove.is_empty() && \
+func _process(_delta: float) -> void:
+	if !_ImporterDialog.visible && !_FilesToApprove.is_empty() && \
 		 !_OverwriteDialog.visible:
-		var file : AMImportFile = _FilesToApprove.back()
-		match file.status:
-			AssetsLibrary.FileImportStatus.STATUS_OVERWRITE:
-				# Starts a new render thread, if there is currently no thumnail available.
-				if !_Thumbnail:
-					_ThumbnailThread = Thread.new()
-					_ThumbnailThread.start(Callable(self, "_render_thumbnail").bind(file))
-				else:
-					# Sets the newly dropped asset for the dialog
-					_FilesToApprove.pop_back() # This is faster than pop_front
-					_OverwriteDialog.set_new_asset(_Thumbnail, file)
-					_OverwriteDialog.popup_centered()
-					_Thumbnail = null
-
-# Renders the thumbnail. Since some importers only work on the main thread,
-# this one must be called outside of the main thread, to avoid locking.
-func _render_thumbnail(file) -> Texture2D:
-	return file.importer.render_thumbnail(file.file)
+		_OverwriteDialog.set_new_assets(_FilesToApprove)
+		_OverwriteDialog.popup_centered()
+		_FilesToApprove = []
 
 func _exit_tree() -> void:
 	BrowserManager.search_changed.disconnect(_search_changed)
@@ -124,10 +110,6 @@ func _exit_tree() -> void:
 	BrowserManager.show_file_info_signal.disconnect(_show_file_info)
 	BrowserManager.enter_tagging_mode.disconnect(_enter_tagging_mode)
 	BrowserManager.leave_tagging_mode.disconnect(_leave_tagging_mode)
-	
-	# Wait for the renderthread to finish, before the programm is closed.
-	if _ThumbnailThread:
-		_ThumbnailThread.wait_to_finish()
 
 # Called if new assets needs to be imported
 # Shows and updates the importer dialog and its progress bar max items.

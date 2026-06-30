@@ -534,6 +534,13 @@ func _build_query(search: AMSearch, query: QueryBuilder, callbacks: Dictionary[S
 		
 	return recursive
 
+## Returns true if the type matches
+func is_type(asset: AMAsset, type: String) -> bool:
+	var qresult := _AssetsDatabase.query_with_bindings_with_qresult("SELECT name FROM asset_types WHERE id = ?", [asset.type])
+	if qresult.is_empty():
+		return false
+		
+	return qresult[0]["name"] == type
 
 ## Returns the total count of items (including dirs and assets), for a search
 func get_assets_count(search: AMSearch) -> int:

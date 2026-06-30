@@ -21,8 +21,8 @@ signal open_containing_folder(parent_folder: int)
 signal show_links(id: int)
 
 @onready var _Card : Panel = $Card
-@onready var _Texture := $Card/MarginContainer/VBoxContainer/TextureRect
-@onready var _Title := $Card/MarginContainer/VBoxContainer/Title
+@onready var _Texture := $Card/MarginContainer/PanelContainer/VBoxContainer/TextureRect
+@onready var _Title := $Card/MarginContainer/PanelContainer/VBoxContainer/Title
 @onready var _Animation := $AnimationPlayer
 @onready var _Move := $Card/HBoxContainer/Move
 @onready var _Delete := $Card/HBoxContainer/Delete
@@ -32,6 +32,7 @@ signal show_links(id: int)
 @onready var _Export := $Card/HBoxContainer/Export
 @onready var _EditField := $Card/EditField
 @onready var _Info := $Card/HBoxContainer/Info
+@onready var _PlayBtn := $Card/MarginContainer/PanelContainer/CenterContainer/Play
 
 static var _CurrentVisibleEditField : LineEdit = null
 
@@ -72,10 +73,14 @@ func _set_asset(p_asset) -> void:
 		_Texture.texture = FOLDER_ICON
 		_Info.visible = true
 		_set_title(asset.name)
+		_PlayBtn.visible = false
 	elif asset is AMAsset:
+		_PlayBtn.visible = AssetsLibrary.is_type(asset, "Audio")
+		
 		_Texture.texture = asset.thumbnail
 		_Info.visible = false
 		_set_title(asset.filename)
+	_PlayBtn.disabled = !_PlayBtn.visible
 
 func _update_controls() -> void:
 	_Delete.visible = is_dir
@@ -227,3 +232,6 @@ func _on_edit_field_gui_input(event: InputEvent) -> void:
 
 func _on_info_pressed() -> void:
 	BrowserManager.show_file_info(asset)
+
+func _on_play_pressed() -> void:
+	BrowserManager.show_and_play_audio(asset)
